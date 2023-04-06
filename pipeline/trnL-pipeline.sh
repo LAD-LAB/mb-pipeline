@@ -4,12 +4,11 @@
 #SBATCH --partition scavenger 
 #SBATCH --out=/hpc/home/%u/trnL-pipeline-%j.out
 #SBATCH --error=/hpc/home/%u/trnL-pipeline-%j.err
-#SBATCH --mail-user=blp23@duke.edu
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 
 # Usage: 
-# sbatch trnL-pipeline.sh /path/to/demux-dir reference-reads reference-taxonomy
+# sbatch --mail-user=netID@duke.edu trnL-pipeline.sh /path/to/demux-dir reference-reads reference-taxonomy
 
 ## Set up input, output directories ############################################
 

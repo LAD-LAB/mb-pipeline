@@ -4,12 +4,11 @@
 #SBATCH --partition scavenger 
 #SBATCH --out=/hpc/home/%u/12SV5-pipeline-%j.out
 #SBATCH --error=/hpc/home/%u/12SV5-pipeline-%j.err
-#SBATCH --mail-user=ks709@duke.edu
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 
 # Usage: 
-# sbatch 12SV5-pipeline.sh /path/to/demux-dir 
+# sbatch --mail-user=netID@duke.edu 12SV5-pipeline.sh /path/to/demux-dir 
 
 ## Set up input, output directories ############################################
 
