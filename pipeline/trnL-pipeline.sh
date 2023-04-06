@@ -8,7 +8,7 @@
 #SBATCH --mail-type=END
 
 # Usage: 
-# sbatch --mail-user=netID@duke.edu trnL-pipeline.sh /path/to/demux-dir reference-reads reference-taxonomy
+# sbatch --mail-user=netID@duke.edu trnL-pipeline.sh /path/to/demux-dir 
 
 ## Set up input, output directories ############################################
 
@@ -92,6 +92,6 @@ qiime feature-table tabulate-seqs \
      --i-data 4_denoised-seqs.qza \
      --o-visualization 4_denoised-seqs.qzv
 
-qiime metadata tabulate \	
+qiime metadata tabulate \
      --m-input-file 4_denoised-stats.qza \
      --o-visualization 4_denoised-stats.qzv

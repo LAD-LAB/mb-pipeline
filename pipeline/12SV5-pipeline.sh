@@ -93,6 +93,6 @@ qiime feature-table tabulate-seqs \
      --i-data 4_denoised-seqs.qza \
      --o-visualization 4_denoised-seqs.qzv
 
-qiime metadata tabulate \ 
-     --m-input-file 4_denoised-stats.qza \ 
+qiime metadata tabulate \
+     --m-input-file 4_denoised-stats.qza \
      --o-visualization 4_denoised-stats.qzv
