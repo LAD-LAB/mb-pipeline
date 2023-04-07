@@ -1,0 +1,129 @@
+---
+title: "Pipeline to phyloseq"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Setup
+
+```{r}
+# Load required R libraries
+library(here)
+library(phyloseq)
+library(qiime2R)
+library(tidyverse)
+```
+
+## Read in data
+
+```{r}
+# Point to directory containing pipeline output
+qiime.dir <- 'path/to/pipeline/output'
+qiime.dir <- here('data', 
+                  'Adult-2', 
+                  'current', 
+                  'batch1')
+
+# Set variables for bash
+Sys.setenv(QIIME_DIR = qiime.dir)
+```
+
+### Read counts
+
+```{bash engine.opts='-l'}
+# Extract count information from QIIME2 visualization object
+# Unzip the files if not already done
+cd "$QIIME_DIR"
+
+for f in [123]*.qzv; do
+     unzip $f -d ${f%.qzv}
+done
+```
+
+```{r}
+# Read TSVs
+count.fs <- 
+     list.files(qiime.dir,
+                pattern = 'per-sample-fastq-counts.tsv',
+                recursive = TRUE,
+                full.names = TRUE)
+
+count.fs <- 
+     lapply(count.fs, read_delim) %>% 
+     lapply(select, -`reverse sequence count`)
+
+counts.qiime <- reduce(count.fs, left_join, by = 'sample ID')
+names(counts.qiime) <- c('sample', 
+                         'raw',
+                         'adapter_trim',
+                         'primer_trim')
+
+rm(count.fs)
+```
+
+### Sequence tables
+
+Use QIIME2R functions to extract information from QIIME2 artifacts. 
+
+```{r}
+qiime.asvtab <- 
+     file.path(qiime.dir,
+          '4_denoised-table.qza') %>% 
+     read_qza()
+```
+
+```{r}
+qiime.seqs <- 
+     file.path(qiime.dir,
+          '4_denoised-seqs.qza') %>% 
+     read_qza()
+```
+
+## Make phyloseq object
+
+### ASV tables
+
+A few notes on QIIME2 output:
+- Features in the ASV table features are a hash instead of a DNA sequence
+- The table is organized as features x samples instead of samples x features
+
+```{r}
+join_table_seqs <- function(feature_table, sequence_hash){
+     # feature_table and sequence_hash are the result of reading in QIIME2
+     # artifacts with QIIME2R
+     
+     # Make dataframe mapping from from hash to ASV
+     sequence_hash <- 
+          data.frame(asv = sequence_hash$data) %>% 
+          rownames_to_column(var = 'hash')
+     
+     # Substitute hash for ASV in feature table
+     feature_table <-
+          feature_table$data %>% 
+          data.frame() %>% 
+          rownames_to_column(var = 'hash') %>% 
+          left_join(sequence_hash) %>% 
+          column_to_rownames(var = 'asv') %>% 
+          select(-hash) 
+     
+     # Transform rows and columns and repair plate-well names\
+     feature_table <- t(feature_table) 
+     
+     # Repair names
+     row.names(feature_table) <- gsub(pattern = 'X',
+                                      replacement = '',
+                                      row.names(feature_table))
+     row.names(feature_table) <- gsub(pattern = '\\.',
+                                      replacement = '-',
+                                      row.names(feature_table))
+          
+     feature_table
+}
+```
+
+```{r}
+qiime.asvtab <- join_table_seqs(qiime.asvtab, qiime.seqs)
+```
+
+The above file is the equivalent of "seqtab" in the next script-- 12SV5 MiniSeq analysis template.
