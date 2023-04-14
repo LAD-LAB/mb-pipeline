@@ -12,9 +12,9 @@ Overall, the steps are:
 - **Transfer processed data back to your local machine.**
 - **Convert the processed data to a phyloseq object.** This is done in R using the notebook `Pipeline to phyloseq.Rmd`.
 
-### Access and set up DCC
+## Access and set up DCC
 
-#### Access
+### Access
 
 The Duke Compute Cluster (DCC) can be accessed by running the following in the terminal:
 
@@ -24,7 +24,7 @@ ssh netid@dcc-login.oit.duke.edu
 
 Sharon can add you to our lab group account if you don't yet have access, and Ben wrote a [helpful guide](https://3.basecamp.com/3853188/buckets/23891967/uploads/4134861105) to using DCC.
 
-#### Setup
+### Setup
 
 The only packages required by the pipeline scripts are Illumina's `bcl2fastq` (available as a pre-installed module on the cluster) and QIIME2.  Ultimately, we can maintain an installation of QIIME2 in a container that everyone can use for ease and reproducibility.  However, I (BP) can't get this to work currently with our 16S or metabarcoding containers.
 
@@ -36,15 +36,29 @@ it onto DCC. Then follow the instructions as written.
 2. **Use Miniconda to install QIIME2.**
 Pick up the [QIIME2 installation instructions](https://docs.qiime2.org/2023.2/install/native/#updating-miniconda) beginning under the header **Updating Miniconda**. Select the QIIME2 release under the Linux tab, since we'll be using it on DCC (which runs Linux).
 
-#### Transfer data
+## Transfer data to DCC
 
-## Install R packages
-
-## Transfer sequencing data to DCC
-
-To move data on and off the cluser, use the `scp` command:
+To move data on and off the cluser, use the `scp` command, which always takes the following form:
 
 ```
-> scp -r path/to/raw/MN000_directory/ your
+> scp [/path/to/data/source] [/path/to/data/destination]
 ```
+
+If you are transfering an entire folder (like the raw MiniSeq data or the output of the pipeline), you'll need to add the "recursive" flag by using `scp -r`. For transfering a MiniSeq run from Isilon on a Mac, this might look something like the following:
+
+```
+scp -r /Volumes/All_Staff/Sequencing/Sequencing2023/230111_MN00462_0022_A000H5CCNH/ [netID]@dcc-login.oit.duke.edu:/hpc/group/ldavidlab/users/blp23/seqdata/20230111_WholyCow_trnL_12SV5
+```
+
+Because the `home` directory on DCC has limited storage, it's helpful to store data on our `group` area of DCC, which can be found at `/hpc/group/ldavidlab/`.  You can make a folder for yourself in `/hpc/group/ldavidlab/users`: I usually transfer my sequencing data there inside a descriptive folder name that allows me to easily navigate to it. 
+
+## Demultiplex
+
+## Run pipeline
+
+## Make phyloseq object
+
+
+
+
 
