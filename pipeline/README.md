@@ -14,6 +14,8 @@ Overall, the steps are:
 
 ### Access and set up DCC
 
+#### Access
+
 The Duke Compute Cluster (DCC) can be accessed by running the following in the terminal:
 
 ```
@@ -22,10 +24,20 @@ ssh netid@dcc-login.oit.duke.edu
 
 Sharon can add you to our lab group account if you don't yet have access, and Ben wrote a [helpful guide](https://3.basecamp.com/3853188/buckets/23891967/uploads/4134861105) to using DCC.
 
-Without a container at preset, you'll need to install your own miniconda following instructions 
-[here](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html), get 
-installer, scp it onto DCC, then follow latter steps. 
-  
+#### Setup
+
+The only packages required by the pipeline scripts are Illumina's `bcl2fastq` (available as a pre-installed module on the cluster) and QIIME2.  Ultimately, we can maintain an installation of QIIME2 in a container that everyone can use for ease and reproducibility.  However, I (BP) can't get this to work currently with our 16S or metabarcoding containers.
+
+Without a container at present, you'll need to make your own QIIME2 installation.  I recommend the following steps for doing this:
+
+1. **Install Miniconda** in your home directory on DCC (`/hpc/home/[your NetID]/`). 
+Following the instructions [here](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html), download the installer and transfer 
+it onto DCC. Then follow the instructions as written. 
+2. **Use Miniconda to install QIIME2.**
+Pick up the [QIIME2 installation instructions](https://docs.qiime2.org/2023.2/install/native/#updating-miniconda) beginning under the header **Updating Miniconda**. Select the QIIME2 release under the Linux tab, since we'll be using it on DCC (which runs Linux).
+
+#### Transfer data
+
 ## Install R packages
 
 ## Transfer sequencing data to DCC
