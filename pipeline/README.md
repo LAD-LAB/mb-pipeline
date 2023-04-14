@@ -52,7 +52,14 @@ scp -r /Volumes/All_Staff/Sequencing/Sequencing2023/230111_MN00462_0022_A000H5CC
 
 Because the `home` directory on DCC has limited storage, it's helpful to store data on our `group` area of DCC, which can be found at `/hpc/group/ldavidlab/`.  You can make a folder for yourself in `/hpc/group/ldavidlab/users`: I usually transfer my sequencing data there inside a descriptive folder name that allows me to easily navigate to it. 
 
+Using this strategy, transfer both
+- the **raw MiniSeq data folder** and
+- the **sample sheet**
+to a location on DCC where you can easily find them for the next pipeline steps.
+
 ## Demultiplex
+
+Next, we'll pick up with processing the data *on* DCC.  For these steps, you'll also need the actual scripts to process the data on the cluster. If you don't have them there already, use `scp` to transfer `demux-barcodes.sh` and `trnL-pipeline.sh` to DCC.  I tend to keep these in my home directory rather than the group directory, but you can keep them wherever is convenient for you to remember and easy to access.
 
 ## Run pipeline
 
