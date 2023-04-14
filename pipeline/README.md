@@ -1,13 +1,16 @@
 ## Instructions
 
 Overall, the steps are:
-- **Access DCC and do initial set up**.
-	- Currently I run these scripts using QIIME2 running in conda environment I installed in my home directory on DCC.  However, don't want to go back to everyone needing to maintain their own installations.   Ultimately, we could adapt these scripts to use QIIME2 in a shared container.  I'Tried running w both metabarcoding and 16S containers, but may be using 
-incorrectly, not able to get to work
+- **Organize the data from the sequencing run**. You will need
+	- The raw sequencing data folder from the MiniSeq (usually named along the lines of `MNXXX_XXX`)
+	- A sample sheet (`.csv` file) mapping each barcode well (*e.g.* 1-A01, 1-B01, 1-C01, or wells A1, B1, and C1 from barcode plate 1) to 8-basepair forward and reverse barcode sequences. The sample sheet format specifications come from Illumina and are tightly standardized. 
+	- A sample data sheet (`.csv` file) mapping barcode wells to any metadata about your samples that is useful for quality control (*e.g.* extraction kit, protocol deviations, Qubit concentrations) or analysis (subject identity, intervention group, sample date, etc.)
+- **Access DCC, do initial set up, and transfer data and sample sheet to the cluster**.
 - **Run the pipeline**.  This consists of two steps, each with an accompanying script:
-	1. *Demultiplexing*: `demux-barcodes.sh`
-	2. *Convert raw reads to inferred ASVs*: `trnL-pipeline.sh`
-
+	1. Demultiplexing: `demux-barcodes.sh`
+	2. Convert raw reads to inferred ASVs: `trnL-pipeline.sh`
+- **Transfer processed data back to your local machine.**
+- **Convert the processed data to a phyloseq object.** This is done in R using the notebook `Pipeline to phyloseq.Rmd`.
 
 ### Access and set up DCC
 
