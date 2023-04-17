@@ -8,8 +8,11 @@ output:
 ## Setup
 
 ```{r}
-# Load required R libraries
-library(here)
+# Load required R libraries, installing if necessary
+# Look for nice require statement a la BioCmanager
+
+library(here) # For relative paths
+library(MButils)
 library(phyloseq)
 library(qiime2R)
 library(tidyverse)
@@ -19,18 +22,17 @@ library(tidyverse)
 
 ```{r}
 # Point to directory containing pipeline output
-qiime.dir <- 'path/to/pipeline/output'
-qiime.dir <- here('data', 
-                  'Adult-2', 
-                  'current', 
-                  'batch1')
+qiime.dir <- here('path', 'to', 'pipeline', 'output')
 
 # Set variables for bash
 Sys.setenv(QIIME_DIR = qiime.dir)
 ```
 
-### Read counts
+## QC
 
+### Extract read counts
+
+This should only be run once; if hanging at this step, you may need to go back and delete files or skip to code chunk below
 ```{bash engine.opts='-l'}
 # Extract count information from QIIME2 visualization object
 # Unzip the files if not already done
@@ -40,6 +42,9 @@ for f in [123]*.qzv; do
      unzip $f -d ${f%.qzv}
 done
 ```
+
+Can I pull out other variables from the 4_??.qzv files
+about quality filtering, denoising, merging, chimeras? 
 
 ```{r}
 # Read TSVs
@@ -62,10 +67,19 @@ names(counts.qiime) <- c('sample',
 rm(count.fs)
 ```
 
-### Sequence tables
+```{r}
+# ADD VISUALIZATION HERE
+```
 
-Use QIIME2R functions to extract information from QIIME2 artifacts. 
+## Make phyloseq object
 
+### ASV tables
+
+A few notes on QIIME2 output:
+- Features in the ASV table features are a hash instead of a DNA sequence
+- The table is organized as features x samples instead of samples x features
+
+We'll pull these using QIIME2R functions to extract information from QIIME2 artifacts, join them together, and re-arrange as samples x features.
 ```{r}
 qiime.asvtab <- 
      file.path(qiime.dir,
@@ -79,14 +93,6 @@ qiime.seqs <-
           '4_denoised-seqs.qza') %>% 
      read_qza()
 ```
-
-## Make phyloseq object
-
-### ASV tables
-
-A few notes on QIIME2 output:
-- Features in the ASV table features are a hash instead of a DNA sequence
-- The table is organized as features x samples instead of samples x features
 
 ```{r}
 join_table_seqs <- function(feature_table, sequence_hash){
@@ -126,4 +132,179 @@ join_table_seqs <- function(feature_table, sequence_hash){
 qiime.asvtab <- join_table_seqs(qiime.asvtab, qiime.seqs)
 ```
 
-The above file is the equivalent of "seqtab" in the next script-- 12SV5 MiniSeq analysis template.
+#### QC
+
+We'll do a few quick QC steps here:
+- First, we'll collapse sequences that are exact subsequences of each other with DADA2's `collapseNoMismatch` function.
+- Second, we'll visualize the distribution of sequence lengths in the dataset.
+
+```{r}
+cat(ncol(qiime.asvtab), 'ASVs before collapsing\n')
+qiime.asvtab <- dada2::collapseNoMismatch(qiime.asvtab)
+cat(ncol(qiime.asvtab), 'ASVs after collapsing\n')
+```
+
+Visualize the distribution of sequence lengths
+
+```{r}
+lengths <- 
+     data.frame(asv = colnames(qiime.asvtab),
+                reads = colSums(qiime.asvtab)) |> 
+     mutate(length = nchar(asv))
+```
+
+```{r}
+# Histogram of sequence lengths
+ggplot(lengths, aes(x = length)) +
+     geom_histogram(binwidth = 5, boundary = 0) +
+     geom_vline(xintercept = c(10, 143), # Reported range of trnL length
+                color = 'red', 
+                linetype = 'dashed') +
+     labs(x = 'ASV length (bp)', y = 'Count') +
+     theme_bw() +
+     scale_x_continuous(minor_breaks = seq(0, 250, 10), 
+                        breaks = seq(0, 250, 50))
+```
+
+### Taxonomy table
+
+```{r}
+# Using modified assignSpecies function from DADA2
+# (only modifies format of returned data, not underlying assignment)
+
+ref <- here('reference', 'trnLGH.fasta')
+taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab, 
+                                             refFasta = ref, 
+                                             tryRC = TRUE)
+```
+
+```{r}
+# How many ASVs unassigned?
+unassigned <- taxtab.species$asv[is.na(taxtab.species$Species)]
+
+# Percentage of sequence variants
+cat(100*(1 - (length(unassigned)/dim(qiime.asvtab)[2])), '% ASVs have an assigment\n')
+
+# Percentage of reads mapping to these unassigned species
+cat('These ASVs cover', 100*(1-sum(qiime.asvtab[, unassigned])/sum(qiime.asvtab)), '% of sequence reads in the dataset')
+```
+
+Now, look up full taxonomy for these assigned species using taxonomizr functions and SQL database.
+
+For taxonomic assignment, we'll need a path to the SQL database of NCBI's taxonomy produced by R's taxonomizr package.  This is saved on Isilon (~70Gb).  You'll need to map the Isilon network drive to your computer and then point R to the right location.  On a Mac, this is below:
+
+```{r}
+sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
+```
+
+```{r}
+# Separate accession from species name in our current list of assignments
+taxtab.species <- separate(taxtab.species, 
+                           Species,
+                           into = c('accession', 'taxon'),
+                           sep = ' ',
+                           extra = 'merge')
+
+head(taxtab.species)
+```
+
+```{r}
+# Now look up full taxonomy
+# First link accession to taxon ID
+taxids <- 
+     taxonomizr::accessionToTaxa(taxtab.species$accession,
+                                 sql)
+```
+
+```{r}
+# Then link taxon ID to full taxonomy
+taxonomy.raw <- 
+     taxonomizr::getRawTaxonomy(taxids, sql)
+```
+
+```{r}
+# Pull desired levels from this structure
+# Not working within getTaxonomy function
+vars <- c("superkingdom", 
+          "phylum", 
+          "class", 
+          "order", 
+          "family", 
+          "genus",
+          "species",
+          "subspecies",
+          "varietas",
+          "forma")
+
+taxonomy <- data.frame(superkingdom = NULL,
+                       phylum = NULL,
+                       class = NULL,
+                       order = NULL,
+                       family = NULL,
+                       genus = NULL,
+                       species = NULL,
+                       subspecies = NULL,
+                       varietas = NULL,
+                       forma = NULL)
+
+# Define an empty row to be returned if no accession was looked up
+empty <- rep(NA, 10)
+names(empty) <- vars
+
+acc <- function(i, taxonomy.raw, vars) {
+     # If accession looked up, pull relevant columns and return it
+     row.i <- 
+          taxonomy.raw[[i]] %>% 
+          t() %>% 
+          data.frame() 
+     
+     # Pick columns we're interested in
+     shared <- intersect(vars, names(row.i))
+     row.i <- select(row.i, one_of(shared))
+     row.i
+}
+
+# If not looked up, returne empty row
+no_acc <- function() empty
+
+for (i in seq_along(taxonomy.raw)){
+     row.i <- 
+          tryCatch(
+               {
+                    acc(i, taxonomy.raw, vars)
+               }, 
+               error = function(e) {
+                    no_acc()
+               }
+          )
+
+     taxonomy <- bind_rows(taxonomy, row.i)
+}
+```
+
+```{r}
+head(taxonomy)
+```
+```{r}
+# Group these to their last common ancestor using taxonomizr's condenseTaxa function
+ncol(qiime.asvtab)
+assignments <- 
+     taxonomizr::condenseTaxa(taxonomy,
+                              groupings = taxtab.species$asv)
+dim(assignments)
+```
+
+```{r}
+# To what label are assignments made?
+colSums(!is.na(assignments))/nrow(assignments)
+```
+### Make object
+
+```{r}
+ps <- 
+     phyloseq(otu_table = otu_table(qiime.asvtab,
+                                    taxa_are_rows = FALSE),
+              tax_table = tax_table(assignments))
+
+ps
+```
