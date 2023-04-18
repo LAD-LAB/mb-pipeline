@@ -82,6 +82,7 @@ install.packages('tidyverse')
 
 BiocManager::install("phyloseq")
 BiocManager::install("dada2")
+BiocManager::install("ShortRead")
 ```
 
 `MButils` and `qiime2R` need to be installed from GitHub:
