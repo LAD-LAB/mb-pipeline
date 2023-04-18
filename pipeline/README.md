@@ -65,7 +65,32 @@ Next, we'll pick up with processing the data *on* DCC.  For these steps, you'll 
 
 ## Make phyloseq object
 
+Code to organize the pipeline output into an ASV table and taxonomy table for a phyloseq is in the R notebook `Pipeline to phyloseq.Rmd`.
 
+If it's your first time running this notebook you'll likely need to install the packages it uses.
+
+`here` and `tidyverse` cna be installed with base R's package installation function:
+```
+install.packages('here')
+install.packages('tidyverse')
+```
+
+`phyloseq` needs to be installed using BiocManager:
+```
+(!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("phyloseq")
+```
+
+`MButils` and `qiime2R` need to be installed from GitHub:
+```
+(!require("devtools", quietly = TRUE))
+    install.packages("devtools")
+
+devtools::install_github('ammararuby/MButils')
+devtools::install_github('jbisanz/qiime2R')
+```
 
 
 
