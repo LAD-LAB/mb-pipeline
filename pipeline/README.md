@@ -69,7 +69,7 @@ Code to organize the pipeline output into an ASV table and taxonomy table for a 
 
 If it's your first time running this notebook you'll likely need to install the packages it uses.
 
-`here` and `tidyverse` cna be installed with base R's package installation function:
+`here` and `tidyverse` can be installed with base R's package installation function:
 ```
 install.packages('here')
 install.packages('tidyverse')
@@ -81,6 +81,8 @@ install.packages('tidyverse')
     install.packages("BiocManager")
 
 BiocManager::install("phyloseq")
+BiocManager::install("dada2")
+BiocManager::install("ShortRead")
 ```
 
 `MButils` and `qiime2R` need to be installed from GitHub:
