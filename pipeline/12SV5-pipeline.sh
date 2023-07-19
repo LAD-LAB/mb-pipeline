@@ -1,41 +1,41 @@
 #!/bin/bash
 #SBATCH --job-name=12SV5-pipeline
 #SBATCH --mem=20000
-#SBATCH --partition scavenger 
-#SBATCH --out=/hpc/home/%u/12SV5-pipeline-%j.out
-#SBATCH --error=/hpc/home/%u/12SV5-pipeline-%j.err
+#SBATCH --partition scavenger
+#SBATCH --out=12SV5-pipeline.out
+#SBATCH --error=12SV5-pipeline.err
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 
-# Usage: 
-# sbatch --mail-user=netID@duke.edu 12SV5-pipeline.sh /path/to/demux-dir 
+# Usage:
+# sbatch --mail-user=netID@duke.edu 12SV5-pipeline.sh /path/to/demux-dir /path/to/qiime2.sif
 
 ## Set up input, output directories ############################################
-
+reportdir=$PWD
 INPUT_DIR=$1
 cd $INPUT_DIR/..
-mkdir ${1##*/}_12SV5_output
-cd ${1##*/}_12SV5_output
-OUTPUT_DIR=$(pwd)
-
-source /hpc/home/blp23/miniconda3/etc/profile.d/conda.sh
-conda activate qiime2-2022.8
+wd=$PWD
+now=$(date +'%Y%m%d')
+OUTPUT_DIR=$now'12SV5_output'
+mkdir $OUTPUT_DIR
+export MPLCONFIGDIR=$OUTPUT_DIR # this environment variable needs a writable directory
+cd $OUTPUT_DIR
 
 ## Import ######################################################################
 
-qiime tools import \
+singularity exec --bind $wd $2 qiime tools import \
      --type 'SampleData[PairedEndSequencesWithQuality]' \
      --input-path $INPUT_DIR \
      --input-format CasavaOneEightSingleLanePerSampleDirFmt \
      --output-path 1_demultiplexed.qza
-     
-qiime demux summarize \
+
+singularity exec --bind $wd $2 qiime demux summarize \
   --i-data 1_demultiplexed.qza \
   --o-visualization 1_demultiplexed.qzv
 
 ## Trim adapter ################################################################
 
-qiime cutadapt trim-paired \
+singularity exec --bind $wd $2 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 1_demultiplexed.qza \
      --p-adapter-f CTGTCTCTTATACACATCT \
      --p-adapter-r CTGTCTCTTATACACATCT \
@@ -43,13 +43,13 @@ qiime cutadapt trim-paired \
      --o-trimmed-sequences 2_adapter-trimmed.qza \
      &> 2_adapter-trimmed.txt
 
-qiime demux summarize \
+singularity exec --bind $wd $2 qiime demux summarize \
   --i-data 2_adapter-trimmed.qza \
   --o-visualization 2_adapter-trimmed.qzv
-     
+
 ## Trim primers ################################################################
 
-qiime cutadapt trim-paired \
+singularity exec --bind $wd $2 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 2_adapter-trimmed.qza \
      --p-adapter-f ^TAGAACAGGCTCCTCTAG...GCATAGTGGGGTATCTAA\
      --p-adapter-r ^TTAGATACCCCACTATGC...CTAGAGGAGCCTGTTCTA\
@@ -60,14 +60,14 @@ qiime cutadapt trim-paired \
      --verbose \
      --o-trimmed-sequences 3_primer-trimmed.qza \
      &> 3_primer-trimmed.txt
-     
-qiime demux summarize \
+
+singularity exec --bind $wd $2 qiime demux summarize \
   --i-data 3_primer-trimmed.qza \
   --o-visualization 3_primer-trimmed.qzv
 
 ## Denoise sequences ###########################################################
 
-qiime dada2 denoise-paired \
+singularity exec --bind $wd $2 qiime dada2 denoise-paired \
      --i-demultiplexed-seqs 3_primer-trimmed.qza \
      --p-trunc-len-f 0 \
      --p-trunc-len-r 0 \
@@ -81,18 +81,23 @@ qiime dada2 denoise-paired \
      --o-representative-sequences 4_denoised-seqs.qza \
      --o-denoising-stats 4_denoised-stats.qza \
      &> 4_denoised.txt
-     
+
 ## Make feature table ##########################################################
 
-qiime metadata tabulate \
+singularity exec --bind $wd $2 qiime metadata tabulate \
      --m-input-file 4_denoised-table.qza \
      --o-visualization 4_denoised-table.qzv
 
 # This maps hash to seqs
-qiime feature-table tabulate-seqs \
+singularity exec --bind $wd $2 qiime feature-table tabulate-seqs \
      --i-data 4_denoised-seqs.qza \
      --o-visualization 4_denoised-seqs.qzv
 
-qiime metadata tabulate \
+singularity exec --bind $wd $2 qiime metadata tabulate \
      --m-input-file 4_denoised-stats.qza \
      --o-visualization 4_denoised-stats.qzv
+
+# move .err and .out files
+mkdir Reports
+mv $reportdir/12SV5-pipeline.out ./Reports/'12SV5-pipeline_'$SLURM_JOB_ID'.out'
+mv $reportdir/12SV5-pipeline.err ./Reports/'12SV5-pipeline_'$SLURM_JOB_ID'.err'
