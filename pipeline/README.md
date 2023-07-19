@@ -26,16 +26,12 @@ Sharon can add you to our lab group account if you don't yet have access, and Be
 
 ### Setup
 
-The only packages required by the pipeline scripts are Illumina's `bcl2fastq` (available as a pre-installed module on the cluster) and QIIME2.  Ultimately, we can maintain an installation of QIIME2 in a container that everyone can use for ease and reproducibility.  However, I (BP) can't get this to work currently with our 16S or metabarcoding containers.
+The only packages required by the pipeline scripts are Illumina's `bcl2fastq` (available as a pre-installed module on the cluster) and QIIME2. I (TM) created a Singularity container containing the 2023.5 version of QIIME2 using Duke Gitlabs, which is hosted here: https://gitlab.oit.duke.edu/lad-lab/qiime2
 
-Without a container at present, you'll need to make your own QIIME2 installation.  I recommend the following steps for doing this:
-
-1. **Install Miniconda** in your home directory on DCC (`/hpc/home/[your NetID]/`). 
-Following the instructions [here](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html), download the installer and transfer 
-it onto DCC. Then follow the instructions as written. 
-2. **Use Miniconda to install QIIME2.**
-Pick up the [QIIME2 installation instructions](https://docs.qiime2.org/2023.2/install/native/#updating-miniconda) beginning under the header **Updating Miniconda**. Select the QIIME2 release under the Linux tab, since we'll be using it on DCC (which runs Linux).
-
+## Download container
+```
+> curl -O https://research-singularity-registry.oit.duke.edu/lad-lab/qiime2.sif 
+```
 ## Transfer data to DCC
 
 To move data on and off the cluser, use the `scp` command, which always takes the following form:
@@ -62,6 +58,18 @@ to a location on DCC where you can easily find them for the next pipeline steps.
 Next, we'll pick up with processing the data *on* DCC.  For these steps, you'll also need the actual scripts to process the data on the cluster. If you don't have them there already, use `scp` to transfer `demux-barcodes.sh` and `trnL-pipeline.sh` to DCC.  I tend to keep these in my home directory rather than the group directory, but you can keep them wherever is convenient for you to remember and easy to access.
 
 ## Run pipeline
+
+First, run the demux-barcodes.sh script:
+```
+sbatch --mail-user=<youremail>@duke.edu /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv
+```
+This will take ~1hr depending on how many samples were in the sequencing run.
+
+Next, run the trnL-pipeline.sh script:
+```
+sbatch --mail-user=<youremail>@duke.edu /path/to/demultiplexed /path/to/qiime2.sif
+```
+This will take several hours
 
 ## Make phyloseq object
 
