@@ -16,7 +16,7 @@ INPUT_DIR=$1
 cd $INPUT_DIR/..
 wd=$PWD
 now=$(date +'%Y%m%d')
-OUTPUT_DIR=$now'12SV5_output'
+OUTPUT_DIR=$now'_12SV5_output'
 mkdir $OUTPUT_DIR
 export MPLCONFIGDIR=$OUTPUT_DIR # this environment variable needs a writable directory
 cd $OUTPUT_DIR
