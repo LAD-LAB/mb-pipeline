@@ -51,7 +51,12 @@ Because the `home` directory on DCC has limited storage, it's helpful to store d
 Using this strategy, transfer both
 - the **raw MiniSeq data folder** and
 - the **sample sheet**
-to a location on DCC where you can easily find them for the next pipeline steps.
+to a location on DCC where you can easily find them for the next pipeline steps. I recommend keeping both files together in their own directory with a short descriptive title, ie:
+```
+/path/to/FoodSeq-USA-teens
+	<Miniseq data folder>
+	samplesheet.csv
+```
 
 ## Demultiplex
 
@@ -63,7 +68,17 @@ First, run the demux-barcodes.sh script:
 ```
 sbatch --mail-user=<youremail>@duke.edu /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv
 ```
-This will take ~1hr depending on how many samples were in the sequencing run.
+This will take ~1hr depending on how many samples were in the sequencing run. The output will result in a file structure that looks like this:
+```
+/path/to/
+	XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX
+	XXXXXXXX_results
+		demultiplexed
+			<your demultiplexed .fastq.gz files will be here>
+		Reports
+			demux-barcodes-<jobid>.err
+			demux-barcodes-<jobid>.out
+```
 
 Next, run the trnL-pipeline.sh script:
 ```
@@ -73,6 +88,9 @@ This will take several hours
 
 ## Make phyloseq object
 
+### Make phyloseq object on DCC
+_In progress_
+### Make phyloseq object locally
 Code to organize the pipeline output into an ASV table and taxonomy table for a phyloseq is in the R notebook `Pipeline to phyloseq.Rmd`.
 
 If it's your first time running this notebook you'll likely need to install the packages it uses.
