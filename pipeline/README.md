@@ -66,7 +66,7 @@ Next, we'll pick up with processing the data *on* DCC.  For these steps, you'll 
 
 First, run the demux-barcodes.sh script:
 ```
-sbatch --mail-user=<youremail>@duke.edu /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv
+sbatch --mail-user=<youremail>@duke.edu demux-barcodes.sh /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv
 ```
 This will take ~1hr depending on how many samples were in the sequencing run. The output will result in a file structure that looks like this:
 ```
@@ -82,7 +82,7 @@ This will take ~1hr depending on how many samples were in the sequencing run. Th
 
 Next, run the trnL-pipeline.sh script:
 ```
-sbatch --mail-user=<youremail>@duke.edu /path/to/demultiplexed /path/to/qiime2.sif
+sbatch --mail-user=<youremail>@duke.edu trnL-pipeline.sh /path/to/demultiplexed /path/to/qiime2.sif
 ```
 This will take several hours
 
