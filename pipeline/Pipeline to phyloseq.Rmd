@@ -67,10 +67,6 @@ count.fs <-
                 pattern = 'per-sample-fastq-counts.tsv|metadata.tsv',
                 recursive = TRUE,
                 full.names = TRUE)
-test=count.fs[1]
-split_result=unlist(str_split(test,"/"))
-
-count.files=c(seq_along(count.fs))
 for (i in seq_along(count.fs)) {
   f=count.fs[i]
   split_result=unlist(str_split(f,"/")) # unzipped qiime directories go /name-of-qzv/random-numbers/data/file.tsv
