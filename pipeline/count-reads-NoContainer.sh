@@ -11,4 +11,4 @@ done
 unzip 4_denoised-stats.qzv -d 4_denoised-stats
 cd $wd
 module load R
-Rscript count-reads-noContainer.R $1
+Rscript count-reads-NoContainer.R $1
