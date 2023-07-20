@@ -31,20 +31,34 @@ library(qiime2R)
 library(tidyverse)
 library(taxonomizr)
 ```
-
+## Download data (if you haven't already)
+Example commands to download your data from the DCC.
+### OPTION 1: Run count-reads locally
+If you have not run count-reads.sh, you will need all the output files (the files are large and this may take a few minutes)
+```{bash, eval=FALSE}
+scp -r <netid>@dcc-login.oit.duke.edu:/path/to/qiime-dir /path/to/local/directory
+```
+Go to "Step 0"
+### OPTION 2: Just download files needed for phyloseq
+```{bash, eval=FALSE}
+# If you ran count-reads.sh, you just need these files:
+scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-table.qza
+scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-seqs.qza
+scp <netid>@dcc-login.oit.duke.edu:/path/to/track-pipeline.csv
+```
+You can skip to "Step 1"
 ## Read in data
+```{r}
+qiime.dir <- '/path/to/qiime-output-directory'
+```
 
+## Step 0) Extract read counts (skip if you already ran count-reads.sh)
 ```{r}
 # Point to directory containing pipeline output
-qiime.dir <- '/path/to/qiime-output'
 # Set variables for bash
 Sys.setenv(QIIME_DIR = qiime.dir)
 ```
-
-## QC
-
-### Extract read counts
-
+NOTE: If you ran the "count-reads" script, you can skip this step.
 This should only be run once; if hanging at this step, you may need to go back and delete files or skip to code chunk below
 ```{bash engine.opts='-l'}
 # Extract count information from QIIME2 visualization object
@@ -67,13 +81,17 @@ count.fs <-
                 pattern = 'per-sample-fastq-counts.tsv|metadata.tsv',
                 recursive = TRUE,
                 full.names = TRUE)
+test=count.fs[1]
+split_result=unlist(str_split(test,"/"))
+
+count.files=c(seq_along(count.fs))
 for (i in seq_along(count.fs)) {
   f=count.fs[i]
   split_result=unlist(str_split(f,"/")) # unzipped qiime directories go /name-of-qzv/random-numbers/data/file.tsv
   dirName=split_result[length(split_result) - 3] # so I can access what step of the pipeline the file came from by going back 3
   f=read_delim(f)
   if (dirName=='4_denoised-table') {
-    break # this file doesn't have read count info
+    break # this directory shouldn't have been unzipped but in case it was, skip it 
   }
   if (dirName=='4_denoised-stats') {
     f=f[-1,] %>%
@@ -101,9 +119,16 @@ names(count.files) <- c('sample',
                         'merged',
                         'non-chimeric')
 count.files
-write.csv(count.files,'track-pipeline.csv')
+write.csv(count.files,file.path(qiime.dir,
+                                'track-pipeline.csv'))
 
-rm(count.fs)
+```
+## Step 1) QC 
+If you already ran 'count-reads', skip to here
+```{r}
+count.files=file.path(qiime.dir,
+                      'track-pipeline.csv') %>%
+  read.csv()
 ```
 
 ```{r}
@@ -125,7 +150,7 @@ count.files %>%
      theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-## Make phyloseq object
+## Step 2) Make phyloseq object
 
 ### ASV tables
 
@@ -244,7 +269,7 @@ cat('These ASVs cover', 100*(1-sum(qiime.asvtab[, unassigned])/sum(qiime.asvtab)
 
 Now, look up full taxonomy for these assigned species using taxonomizr functions and SQL database.
 
-For taxonomic assignment, we'll need a path to the SQL database of NCBI's taxonomy produced by R's taxonomizr package.  This is saved on Isilon (~70Gb).  You'll need to map the Isilon network drive to your computer and then point R to the right location.  On a Mac, this is below:
+For taxonomic assignment, we'll need a path to the SQL database of NCBI's taxonomy produced by R's taxonomizr package.  This is saved on Isilon (~70Gb).  You'll need to map the Isilon network drive to your computer and then point R to the right location. To do this on a Mac, open the application "Finder". At the top of your screen, click "Go". Click "Connect to Server." Now enter 'smb://duhsnas-pri.dhe.duke.edu/dusom_mgm-david/All_Staff' and connect. (You will need to enter your netID, password, and the passcode from Duo for 2-step authentication.) If you are on a Mac, you can then connect to the taxonomy file by using the path below:
 
 ```{r}
 sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
@@ -361,7 +386,7 @@ ps <-
 
 ps
 ```
-# Save
+# Step 3) Save
 ```{r}
 ps %>%
   saveRDS(file=here('ps.rds'))
