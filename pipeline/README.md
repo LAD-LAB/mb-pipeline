@@ -87,24 +87,9 @@ sbatch --mail-user=<youremail>@duke.edu trnL-pipeline.sh /path/to/demultiplexed 
 This will take several hours
 ## OPTIONAL: Count reads on cluster
 The output files from trnL-pipeline.sh are pretty large and you only need 2 of them to build the phyloseq object. If you prefer, you can run the first QC step while still on the cluster so you don't have to download all the files.
-
-To do this, you will need the R package tidyverse. I have it installed in the metabarcoding container, which you can download with this command: 
 ```
-> curl -O https://research-singularity-registry.oit.duke.edu/lad-lab/metabarcoding.sif 
+sbatch count-reads.sh /path/to/qiime-dir /path/to/qiime2.sif
 ```
-Now run count-reads.sh:
-```
-sbatch count-reads.sh /path/to/qiime-dir /path/to/metabarcoding.sif
-```
-Alternatively, you can install your own instance of tidyverse on the DCC and use that:
-```
-srun -p scavenger --pty /bin/bash # set up an interactive session
-module load R
-R
-install.packages('tidyverse', repo='https://archive.linux.duke.edu/cran/',lib='/hpc/home/<netid>') # this will install tidyverse to your home directory
-```
-Edit the first line in "count-reads-NoContainer.R" to change the library location path. Then, you can run count-reads-NoContainer.sh.
-
 The count-reads script will unzip the qiime output files and then run the Rscript, which pulls the read count information from each step of the trnL pipeline. This will write a file called track-pipeline.csv, which will have the read counts for each sample at each step.
 
 ## Make phyloseq object
