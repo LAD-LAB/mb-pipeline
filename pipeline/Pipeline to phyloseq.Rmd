@@ -22,6 +22,7 @@ output:
 # devtools::install_github('jbisanz/qiime2R')
 # install.packages('tidyverse')
 # install.packages('taxonomizr')
+# install.packages('here')
 
 library(here) # For relative paths
 library(MButils)
