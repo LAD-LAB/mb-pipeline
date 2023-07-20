@@ -96,14 +96,22 @@ Now run count-reads.sh:
 ```
 sbatch count-reads.sh /path/to/qiime-dir /path/to/metabarcoding.sif
 ```
-This script will unzip the qiime output files and then run count-reads.R, which pulls the read count information from each step of the trnL pipeline. This will write a file called track-pipeline.csv, which will have the read counts for each sample at each step.
+Alternatively, you can install your own instance of tidyverse on the DCC and use that:
+```
+srun -p scavenger --pty /bin/bash # set up an interactive session
+module load R
+R
+install.packages('tidyverse', repo='https://archive.linux.duke.edu/cran/',lib='/hpc/home/<netid>') # this will install tidyverse to your home directory
+```
+Edit the first line in "count-reads-NoContainer.R" to change the library location path. Then, you can run count-reads-NoContainer.sh.
+
+The count-reads script will unzip the qiime output files and then run the Rscript, which pulls the read count information from each step of the trnL pipeline. This will write a file called track-pipeline.csv, which will have the read counts for each sample at each step.
 
 ## Make phyloseq object
 
-### Make phyloseq object locally
 Code to organize the pipeline output into an ASV table and taxonomy table for a phyloseq is in the R notebook `Pipeline to phyloseq.Rmd`.
 
-If it's your first time running this notebook you'll likely need to install the packages it uses.
+If it's your first time running this notebook you'll likely need to install the packages it uses. The code for installing all required packages is already in the R notebook, just commented out, but for further explanation see below:
 
 `here` and `tidyverse` can be installed with base R's package installation function:
 ```
