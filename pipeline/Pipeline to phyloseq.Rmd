@@ -9,21 +9,34 @@ output:
 
 ```{r}
 # Load required R libraries, installing if necessary
-# Look for nice require statement a la BioCmanager
+# if (!require("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# (!require("devtools", quietly = TRUE))
+#     install.packages("devtools")
+# 
+# devtools::install_github('ammararuby/MButils')
+# devtools::install_github('jbisanz/qiime2R')
+# BiocManager::install("phyloseq")
+# BiocManager::install("dada2")
+# BiocManager::install("ShortRead")
+# devtools::install_github('jbisanz/qiime2R')
+# install.packages('tidyverse')
+# install.packages('taxonomizr')
 
 library(here) # For relative paths
 library(MButils)
 library(phyloseq)
+library(devtools)
 library(qiime2R)
 library(tidyverse)
+library(taxonomizr)
 ```
 
 ## Read in data
 
 ```{r}
 # Point to directory containing pipeline output
-qiime.dir <- here('path', 'to', 'pipeline', 'output')
-
+qiime.dir <- '/path/to/qiime-output'
 # Set variables for bash
 Sys.setenv(QIIME_DIR = qiime.dir)
 ```
@@ -43,32 +56,60 @@ for f in [123]*.qzv; do
 done
 ```
 
-Can I pull out other variables from the 4_??.qzv files
-about quality filtering, denoising, merging, chimeras? 
 
 ```{r}
+
 # Read TSVs
 count.fs <- 
      list.files(qiime.dir,
                 pattern = 'per-sample-fastq-counts.tsv',
                 recursive = TRUE,
                 full.names = TRUE)
+test=count.fs[1]
+split_result=unlist(str_split(test,"/"))
 
-count.fs <- 
-     lapply(count.fs, read_delim) %>% 
-     lapply(select, -`reverse sequence count`)
-
-counts.qiime <- reduce(count.fs, left_join, by = 'sample ID')
-names(counts.qiime) <- c('sample', 
+count.files=c(seq_along(count.fs))
+for (i in seq_along(count.fs)) {
+  f=count.fs[i]
+  split_result=unlist(str_split(f,"/")) # unzipped qiime directories go /name-of-qzv/random-numbers/data/file.tsv
+  dirName=split_result[length(split_result) - 3] # so I can access what step of the pipeline the file came from by going back 3
+  f=read_delim(f)
+  colnames(f)=str_replace_all(colnames(f),fixed(" "),"_")
+  f$reverse_sequence_count=NULL
+  colnames(f)[2]=dirName
+  if (i==1) {
+    count.files=f
+  } else {
+    count.files=left_join(count.files,f,by='sample_ID')
+  }
+}
+count.files
+names(count.files) <- c('sample', 
                          'raw',
                          'adapter_trim',
                          'primer_trim')
+write.csv(count.files,'track-pipeline.csv')
 
 rm(count.fs)
 ```
 
 ```{r}
-# ADD VISUALIZATION HERE
+count.files %>%
+  pivot_longer(names_to = 'step',values_to = 'count',cols=c('raw','adapter_trim','primer_trim')) %>%
+  mutate(label=ifelse(sample=='Undetermined','Undetermined','Sample'),
+         step=factor(step,levels=c('raw','adapter_trim','primer_trim'))) %>%
+  ggplot(aes(x = step, 
+                       y = count, 
+                       by = sample, 
+                       group = sample)) +
+     geom_line(alpha = 0.5) +
+     facet_wrap(~label, 
+                scales = 'free_y') +
+     labs(x = 'Pipeline step', 
+          y = 'Reads', 
+          title = '[DATE] MiniSeq run') +
+     theme_bw() +
+     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ## Make phyloseq object
@@ -111,7 +152,7 @@ join_table_seqs <- function(feature_table, sequence_hash){
           rownames_to_column(var = 'hash') %>% 
           left_join(sequence_hash) %>% 
           column_to_rownames(var = 'asv') %>% 
-          select(-hash) 
+          dplyr::select(-hash) 
      
      # Transform rows and columns and repair plate-well names\
      feature_table <- t(feature_table) 
@@ -171,8 +212,7 @@ ggplot(lengths, aes(x = length)) +
 ```{r}
 # Using modified assignSpecies function from DADA2
 # (only modifies format of returned data, not underlying assignment)
-
-ref <- here('reference', 'trnLGH.fasta')
+ref <- here('0_Methods', 'Reference','12SV5.fasta')
 taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab, 
                                              refFasta = ref, 
                                              tryRC = TRUE)
@@ -308,3 +348,9 @@ ps <-
 
 ps
 ```
+# Save
+```{r}
+ps %>%
+  saveRDS(file=here('ps.rds'))
+```
+
