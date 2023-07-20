@@ -50,4 +50,5 @@ names(count.files) <- c('sample',
                         'non-chimeric')
 print('your count table')
 count.files
-write.csv(count.files,'track-pipeline.csv')
+write.csv(count.files,file.path(qiime.dir,
+                                'track-pipeline.csv'))
