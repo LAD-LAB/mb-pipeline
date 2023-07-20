@@ -54,6 +54,8 @@ cd "$QIIME_DIR"
 for f in [123]*.qzv; do
      unzip $f -d ${f%.qzv}
 done
+unzip 4_denoised-stats.qzv -d 4_denoised-stats
+
 ```
 
 
@@ -62,7 +64,7 @@ done
 # Read TSVs
 count.fs <- 
      list.files(qiime.dir,
-                pattern = 'per-sample-fastq-counts.tsv',
+                pattern = 'per-sample-fastq-counts.tsv|metadata.tsv',
                 recursive = TRUE,
                 full.names = TRUE)
 test=count.fs[1]
@@ -74,9 +76,19 @@ for (i in seq_along(count.fs)) {
   split_result=unlist(str_split(f,"/")) # unzipped qiime directories go /name-of-qzv/random-numbers/data/file.tsv
   dirName=split_result[length(split_result) - 3] # so I can access what step of the pipeline the file came from by going back 3
   f=read_delim(f)
+  if (dirName=='4_denoised-table') {
+    break # this file doesn't have read count info
+  }
+  if (dirName=='4_denoised-stats') {
+    f=f[-1,] %>%
+      mutate(sample_ID=`sample-id`) %>%
+      dplyr::select(sample_ID,filtered,denoised,merged,`non-chimeric`) 
+    
+  } 
+  else {
   colnames(f)=str_replace_all(colnames(f),fixed(" "),"_")
   f$reverse_sequence_count=NULL
-  colnames(f)[2]=dirName
+  colnames(f)[2]=dirName }
   if (i==1) {
     count.files=f
   } else {
@@ -87,7 +99,12 @@ count.files
 names(count.files) <- c('sample', 
                          'raw',
                          'adapter_trim',
-                         'primer_trim')
+                         'primer_trim',
+                        'filtered',
+                        'denoised',
+                        'merged',
+                        'non-chimeric')
+count.files
 write.csv(count.files,'track-pipeline.csv')
 
 rm(count.fs)
