@@ -30,5 +30,5 @@ mv $outdir/*.fastq.gz $outdir/demultiplexed/
 
 # move .err and .out files
 mkdir $outdir/Reports
-mv $wd/'demux-barcode-'$SLURM_JOB_ID'.out' $outdir/Reports
-mv $wd/'demux-barcode-'$SLURM_JOB_ID'.err' $outdir/Reports
+mv $codedir/'demux-barcode-'$SLURM_JOB_ID'.out' $outdir/Reports
+mv $codedir/'demux-barcode-'$SLURM_JOB_ID'.err' $outdir/Reports
