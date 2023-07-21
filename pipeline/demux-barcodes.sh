@@ -7,7 +7,7 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 
-# Usage: demux-barcode.sh /miniseq-dir /path/to/samplesheetname 
+# Usage: demux-barcode.sh /miniseq-dir /path/to/samplesheetname /path/to/metabarcoding.sif
 # Example: sbatch demux-barcode.sh path/to/miniseq-dir /path/to/samplesheet.csv 
 wd=$PWD
 cd $1/..
@@ -17,8 +17,7 @@ mkdir $outdir
 mkdir $outdir/demultiplexed
 
 # Demultiplex
-module load bcl2fastq
-bcl2fastq -o $outdir/demultiplexed --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $2
+singularity exec --bind . $3 bcl2fastq -o $outdir/demultiplexed --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $2
 
 # move .err and .out files
 mkdir $outdir/Reports
