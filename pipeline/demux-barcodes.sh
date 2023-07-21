@@ -11,13 +11,14 @@
 # Example: sbatch demux-barcode.sh path/to/miniseq-dir /path/to/samplesheet.csv 
 wd=$PWD
 cd $1/..
+datadir=$PWD
 now=$(date +'%Y%m%d') # set output directory name to current date
 outdir=$now'_results'
 mkdir $outdir
 mkdir $outdir/demultiplexed
 
 # Demultiplex
-singularity exec --bind . $3 bcl2fastq -o $outdir/demultiplexed --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $2
+singularity exec --bind $datadir $3 bcl2fastq -o $outdir/demultiplexed --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $2
 
 # move .err and .out files
 mkdir $outdir/Reports
