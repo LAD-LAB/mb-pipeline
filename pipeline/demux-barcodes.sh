@@ -22,7 +22,7 @@ mkdir $outdir
 
 cd $1
 
-singularity exec --bind $parent $2 bcl2fastq -o $outdir --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $parent/$3
+singularity exec --bind $parent $3 bcl2fastq -o $outdir --interop-dir InterOp/$now --stats-dir Stats/$now --reports-dir Reports/$now --minimum-trimmed-read-length 0 --mask-short-adapter-reads 0 --sample-sheet $2
 
 # Clean up directory structure
 mkdir $outdir/demultiplexed
