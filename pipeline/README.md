@@ -26,12 +26,8 @@ Sharon can add you to our lab group account if you don't yet have access, and Be
 
 ### Setup
 
-The only packages required by the pipeline scripts are Illumina's `bcl2fastq` (available as a pre-installed module on the cluster) and QIIME2. I (TM) created a Singularity container containing the 2023.5 version of QIIME2 using Duke Gitlabs, which is hosted here: https://gitlab.oit.duke.edu/lad-lab/qiime2
+The only packages required by the pipeline scripts are Illumina's `bcl2fastq` and QIIME2. I (TM) created a Singularity container containing the 2023.5 version of QIIME2 using Duke Gitlabs. It is located at /hpc/group/ldavidlab/qiime2.sif. The singularity container metabarcoding.sif has bcl2fastq already installed and is is located at /hpc/group/ldavidlab/metabarcoding.sif.
 
-## Download container
-```
-> curl -O https://research-singularity-registry.oit.duke.edu/lad-lab/qiime2.sif 
-```
 ## Transfer data to DCC
 
 To move data on and off the cluser, use the `scp` command, which always takes the following form:
