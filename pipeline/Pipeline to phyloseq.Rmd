@@ -118,7 +118,7 @@ names(count.files) <- c('sample',
                         'filtered',
                         'denoised',
                         'merged',
-                        'non-chimeric')
+                        'non_chimeric')
 count.files
 write.csv(count.files,file.path(qiime.dir,
                                 'track-pipeline.csv'))
@@ -134,9 +134,21 @@ count.files=file.path(qiime.dir,
 
 ```{r}
 count.files %>%
-  pivot_longer(names_to = 'step',values_to = 'count',cols=c('raw','adapter_trim','primer_trim')) %>%
+  pivot_longer(names_to = 'step',values_to = 'count',cols=c('raw',
+                         'adapter_trim',
+                         'primer_trim',
+                        'filtered',
+                        'denoised',
+                        'merged',
+                        'non_chimeric')) %>%
   mutate(label=ifelse(sample=='Undetermined','Undetermined','Sample'),
-         step=factor(step,levels=c('raw','adapter_trim','primer_trim'))) %>%
+         step=factor(step,levels=c('raw',
+                         'adapter_trim',
+                         'primer_trim',
+                        'filtered',
+                        'denoised',
+                        'merged',
+                        'non_chimeric'))) %>%
   ggplot(aes(x = step, 
                        y = count, 
                        by = sample, 
