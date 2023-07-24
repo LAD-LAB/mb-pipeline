@@ -47,7 +47,7 @@ names(count.files) <- c('sample',
                         'filtered',
                         'denoised',
                         'merged',
-                        'non-chimeric')
+                        'non_chimeric')
 print('your count table')
 count.files
 write.csv(count.files,file.path(qiime.dir,
