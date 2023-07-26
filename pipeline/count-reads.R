@@ -35,8 +35,8 @@ for (i in seq_along(count.fs)) {
 }
 print('count table prior to renaming')
 head(count.files)
-if (length(colnames(data.frame(count.files)))) !=8) {
-  print(paste('Unexpected number of columns:' length(colnames(data.frame(count.files)))))
+if (length(colnames(data.frame(count.files))) !=8) {
+  print(paste('Unexpected number of columns:', length(colnames(data.frame(count.files)))))
   print('Expected number of columns: 8')
   print('Are you missing output files from trnL-pipeline.sh? Are there extra directories in your qiime-dir?')
 }
