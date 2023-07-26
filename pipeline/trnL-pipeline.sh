@@ -13,8 +13,8 @@
 ## Set up input, output directories ############################################
 
 reportdir=$PWD
-INPUT_DIR=$1
-cd $INPUT_DIR/..
+INPUT=$1
+cd $INPUT/..
 wd=$PWD
 now=$(date +'%Y%m%d')
 OUTPUT_DIR=$now'_trnL_output'
