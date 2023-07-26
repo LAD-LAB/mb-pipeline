@@ -98,6 +98,6 @@ singularity exec --bind $wd $2 qiime metadata tabulate \
      --m-input-file 4_denoised-stats.qza \
      --o-visualization 4_denoised-stats.qzv
 # move .err and .out files
-mkdir Reports
+cd $wd
 mv $reportdir/'trnL-pipeline-'$SLURM_JOB_ID'.out' ./Reports/
 mv $reportdir/'trnL-pipeline-'$SLURM_JOB_ID'.err' ./Reports/
