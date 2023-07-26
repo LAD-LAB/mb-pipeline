@@ -19,7 +19,7 @@ wd=$PWD
 now=$(date +'%Y%m%d')
 OUTPUT_DIR=$now'_trnL_output'
 mkdir $OUTPUT_DIR
-export MPLCONFIGDIR=$OUTPUT_DIR # this environment variable needs a writable directory
+export MPLCONFIGDIR=$wd # this environment variable needs a writable directory
 cd $OUTPUT_DIR
 
 ## Import ######################################################################
