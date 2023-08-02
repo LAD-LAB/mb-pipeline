@@ -269,7 +269,7 @@ ggplot(lengths, aes(x = length)) +
 ```{r}
 # Using modified assignSpecies function from DADA2
 # (only modifies format of returned data, not underlying assignment)
-ref <- here('0_Methods', 'Reference','12SV5.fasta')
+ref <- file.path('path', 'to','trnL.fasta')
 taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab, 
                                              refFasta = ref, 
                                              tryRC = TRUE)
