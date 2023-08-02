@@ -128,7 +128,13 @@ cd /path/to/mb-pipeline
 # enter command using following structure ('script-writer.Rmd' can also generate this for you)
 sbatch --mail-user=<youremail>@duke.edu demux-barcodes.sh /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv /hpc/group/ldavidlab/metabarcoding.sif
 ```
-This will take 20min-1hr depending on how many samples were in the sequencing run. The output will result in a file structure that looks like this:
+This will take 20min-1hr depending on how many samples were in the sequencing run. You can check on the status of the job with this command:
+```
+squeue -u <netid>
+```
+This will show all of the jobs that you have currently running.
+
+The output will result in a file structure that looks like this:
 ```
 /path/to/
 	XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX
