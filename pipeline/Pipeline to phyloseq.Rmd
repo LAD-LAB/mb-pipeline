@@ -416,9 +416,9 @@ ps =here('ps.rds') %>%
 ```
  # Step 4) Add metadata
 ```{r}
-samdf=here('sample-metadata.csv') %>% # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
+samdf=here('sample-metadata.csv') %>% read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
 # samdf=read.csv('/path/to/sample-metadata.csv')
-read.csv() 
+
 row.names(samdf)=samdf$Sample_ID
 sample_data(ps)=samdf
 ```
