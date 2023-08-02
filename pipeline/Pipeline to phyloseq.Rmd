@@ -31,6 +31,38 @@ library(devtools)
 library(qiime2R)
 library(tidyverse)
 library(taxonomizr)
+
+join_table_seqs <- function(feature_table, sequence_hash){
+     # feature_table and sequence_hash are the result of reading in QIIME2
+     # artifacts with QIIME2R
+     
+     # Make dataframe mapping from from hash to ASV
+     sequence_hash <- 
+          data.frame(asv = sequence_hash$data) %>% 
+          rownames_to_column(var = 'hash')
+     
+     # Substitute hash for ASV in feature table
+     feature_table <-
+          feature_table$data %>% 
+          data.frame() %>% 
+          rownames_to_column(var = 'hash') %>% 
+          left_join(sequence_hash) %>% 
+          column_to_rownames(var = 'asv') %>% 
+          dplyr::select(-hash) 
+     
+     # Transform rows and columns and repair plate-well names\
+     feature_table <- t(feature_table) 
+     
+     # Repair names
+     row.names(feature_table) <- gsub(pattern = 'X',
+                                      replacement = '',
+                                      row.names(feature_table))
+     row.names(feature_table) <- gsub(pattern = '\\.',
+                                      replacement = '-',
+                                      row.names(feature_table))
+          
+     feature_table
+}
 ```
 ## Download data (if you haven't already)
 Example commands to download your data from the DCC.
@@ -48,12 +80,14 @@ scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-seqs.qza
 scp <netid>@dcc-login.oit.duke.edu:/path/to/track-pipeline.csv
 ```
 You can skip to "Step 1"
-## Read in data
+
+## Step 0) Extract read counts (skip if you already ran count-reads.sh)
+
+### Read in data
 ```{r}
 qiime.dir <- '/path/to/qiime-output-directory'
 ```
 
-## Step 0) Extract read counts (skip if you already ran count-reads.sh)
 ```{r}
 # Point to directory containing pipeline output
 # Set variables for bash
@@ -173,6 +207,11 @@ A few notes on QIIME2 output:
 
 We'll pull these using QIIME2R functions to extract information from QIIME2 artifacts, join them together, and re-arrange as samples x features.
 ```{r}
+# if you haven't already set this variable to wherever you have the '4_denoised-table.qza', '4_denoised-seqs.qza', and 'track-pipeline.csv' files saved
+# qiime.dir <- '/path/to/qiime-output-directory'
+```
+
+```{r}
 qiime.asvtab <- 
      file.path(qiime.dir,
           '4_denoised-table.qza') %>% 
@@ -186,39 +225,6 @@ qiime.seqs <-
      read_qza()
 ```
 
-```{r}
-join_table_seqs <- function(feature_table, sequence_hash){
-     # feature_table and sequence_hash are the result of reading in QIIME2
-     # artifacts with QIIME2R
-     
-     # Make dataframe mapping from from hash to ASV
-     sequence_hash <- 
-          data.frame(asv = sequence_hash$data) %>% 
-          rownames_to_column(var = 'hash')
-     
-     # Substitute hash for ASV in feature table
-     feature_table <-
-          feature_table$data %>% 
-          data.frame() %>% 
-          rownames_to_column(var = 'hash') %>% 
-          left_join(sequence_hash) %>% 
-          column_to_rownames(var = 'asv') %>% 
-          dplyr::select(-hash) 
-     
-     # Transform rows and columns and repair plate-well names\
-     feature_table <- t(feature_table) 
-     
-     # Repair names
-     row.names(feature_table) <- gsub(pattern = 'X',
-                                      replacement = '',
-                                      row.names(feature_table))
-     row.names(feature_table) <- gsub(pattern = '\\.',
-                                      replacement = '-',
-                                      row.names(feature_table))
-          
-     feature_table
-}
-```
 
 ```{r}
 qiime.asvtab <- join_table_seqs(qiime.asvtab, qiime.seqs)
@@ -404,4 +410,57 @@ ps
 ps %>%
   saveRDS(file=here('ps.rds'))
 ```
+```{r}
+ps =here('ps.rds') %>%
+  readRDS()
+```
+ # Step 4) Add metadata
+```{r}
+samdf=here('sample-metadata.csv') %>% # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
+# samdf=read.csv('/path/to/sample-metadata.csv')
+read.csv() 
+row.names(samdf)=samdf$Sample_ID
+sample_data(ps)=samdf
+```
 
+```{r}
+ps %>%
+  saveRDS(file=here('ps-wMetadata.rds'))
+```
+
+```{r}
+ps=here('ps-wMetadata.rds') %>%
+  readRDS()
+```
+# Step 5: QC
+You will need a column labeled "type" with whether or not the sample is a "positive control", "negative control", "blank", or "sample". You will need those exact labels for this next code chunk to work:
+```{r}
+ps.controls <-
+     ps %>% 
+     subset_samples(type %in% c('blank',
+                                'positive control', 
+                                'negative control')) %>% 
+     prune_taxa(taxa_sums(.) > 0, .)
+ps.controls
+
+taxtab.controls <- tax_table(ps.controls)@.Data
+taxtab.controls=data.frame(taxtab.controls) %>% 
+   mutate(label=ifelse(!is.na(species),species, # setting "name" to the lowest taxonomic level that was assigned 
+                     ifelse(!is.na(genus),genus, # there is probably a much more elegant way to do this but oh well
+                            ifelse(!is.na(family),family,
+                                   ifelse(!is.na(order),order,phylum)))))
+
+# Replace in object
+tax_table(ps.controls) <- as.matrix(taxtab.controls)
+taxtab.controls
+p=ps.controls %>% 
+     psmelt() %>% 
+     ggplot(aes(x = Sample, y = Abundance, fill = label)) +
+     geom_bar(stat = "identity", position = "stack") + 
+     facet_wrap(~type, scales = 'free') +
+     labs(x = 'Control', y = 'Number of reads', fill = 'ASV identity',
+     title = 'SAGE 14-28mo lib2 12SV5') +
+     theme_bw()
+print(p)
+ggsave(plot=p,filename=here('controls.png'))
+```
