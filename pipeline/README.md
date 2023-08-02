@@ -62,8 +62,11 @@ scp -r 230111_MN00462_0022_A000H5CCNH [netID]@dcc-login.oit.duke.edu:/hpc/group/
 ```
 
 Because the `home` directory on DCC has limited storage, it's helpful to store data on our `group` area of DCC, which can be found at `/hpc/group/ldavidlab/`.  You can make a folder for yourself in `/hpc/group/ldavidlab/users`: I usually transfer my sequencing data there inside a descriptive folder name that allows me to easily navigate to it. 
-
-Using this strategy, transfer both
+### Upload sample sheet
+```
+scp /path/to/samplesheet.csv <netid>@dcc-login.oit.duke.edu:/path/to/destination
+```
+Using this strategy, you should now have transferred
 - the **raw MiniSeq data folder** and
 - the **sample sheet**
 to a location on DCC where you can easily find them for the next pipeline steps. I recommend keeping both files together in their own directory with a short descriptive title, ie:
