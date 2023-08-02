@@ -3,7 +3,7 @@
 Overall, the steps are:
 - **Organize the data from the sequencing run**. You will need
 	- The raw sequencing data folder from the MiniSeq (usually named along the lines of `MNXXX_XXX`)
-	- A sample sheet (`.csv` file) mapping each barcode well (*e.g.* 1-A01, 1-B01, 1-C01, or wells A1, B1, and C1 from barcode plate 1) to 8-basepair forward and reverse barcode sequences. The sample sheet format specifications come from Illumina and are tightly standardized. 
+	- A sample sheet (`.csv` file) mapping each barcode well (*e.g.* 1-A01, 1-B01, 1-C01, or wells A1, B1, and C1 from barcode plate 1) to 8-basepair forward and reverse barcode sequences. The sample sheet format specifications come from Illumina and are tightly standardized. See the "reference" folder for a template sample sheet.
 	- A sample data sheet (`.csv` file) mapping barcode wells to any metadata about your samples that is useful for quality control (*e.g.* extraction kit, protocol deviations, Qubit concentrations) or analysis (subject identity, intervention group, sample date, etc.)
 - **Access DCC, do initial set up, and transfer data and sample sheet to the cluster**.
 - **Run the pipeline**.  This consists of two steps, each with an accompanying script:
@@ -63,6 +63,7 @@ scp -r 230111_MN00462_0022_A000H5CCNH [netID]@dcc-login.oit.duke.edu:/hpc/group/
 
 Because the `home` directory on DCC has limited storage, it's helpful to store data on our `group` area of DCC, which can be found at `/hpc/group/ldavidlab/`.  You can make a folder for yourself in `/hpc/group/ldavidlab/users`: I usually transfer my sequencing data there inside a descriptive folder name that allows me to easily navigate to it. 
 ### Upload sample sheet
+The "TEMPLATE_samplesheet.csv" file in this repository has all of the barcode sequences used by this lab. Download the file, delete the rows for the barcodes you don't need, and upload the file:
 ```
 scp /path/to/samplesheet.csv <netid>@dcc-login.oit.duke.edu:/path/to/destination
 ```
@@ -157,6 +158,8 @@ The output files from trnL-pipeline.sh are pretty large and you only need 2 of t
 ```
 sbatch count-reads.sh /path/to/qiime-dir /path/to/qiime2.sif
 ```
+This will only take a few seconds to run.
+\n
 The count-reads script will unzip the qiime output files and then run the Rscript, which pulls the read count information from each step of the trnL pipeline. This will write a file called track-pipeline.csv, which will have the read counts for each sample at each step.
 
 ## Make phyloseq object
