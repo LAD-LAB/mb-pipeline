@@ -22,7 +22,7 @@ The Duke Compute Cluster (DCC) can be accessed by running the following in the t
 ssh netid@dcc-login.oit.duke.edu
 ```
 
-Sharon can add you to our lab group account if you don't yet have access, and Ben wrote a [helpful guide](https://3.basecamp.com/3853188/buckets/23891967/uploads/4134861105) to using DCC.
+Sharon can add you to our lab group account if you don't yet have access, and Ben wrote a [helpful guide](https://3.basecamp.com/3853188/buckets/5063817/uploads/6463527747) to using DCC.
 
 ### Setup
 
