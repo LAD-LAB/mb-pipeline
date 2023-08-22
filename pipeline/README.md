@@ -63,7 +63,7 @@ scp -r 230111_MN00462_0022_A000H5CCNH [netID]@dcc-login.oit.duke.edu:/hpc/group/
 
 Because the `home` directory on DCC has limited storage, it's helpful to store data on our `group` area of DCC, which can be found at `/hpc/group/ldavidlab/`.  You can make a folder for yourself in `/hpc/group/ldavidlab/users`: I usually transfer my sequencing data there inside a descriptive folder name that allows me to easily navigate to it. 
 ### Upload sample sheet
-The "TEMPLATE_samplesheet.csv" file in this repository has all of the barcode sequences used by this lab. Download the file, delete the rows for the barcodes you don't need, and upload the file:
+The "TEMPLATE_samplesheet.csv" file in this repository has all of the barcode sequences used by this lab. Download the file, delete the rows for the barcodes you don't need and upload the new file:
 ```
 scp /path/to/samplesheet.csv <netid>@dcc-login.oit.duke.edu:/path/to/destination
 ```
@@ -124,10 +124,8 @@ First, run the demux-barcodes.sh script.
 ```
 # connect to the DCC
 ssh <netid>@dcc-login.oit.duke.edu
-# navigate to wherever you store the demux-barcodes.sh script
-cd /path/to/mb-pipeline
 # enter command using following structure ('script-writer.Rmd' can also generate this for you)
-sbatch --mail-user=<youremail>@duke.edu demux-barcodes.sh /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv /hpc/group/ldavidlab/metabarcoding.sif
+sbatch --mail-user=<youremail>@duke.edu /path/to/demux-barcodes.sh /path/to/XXXXXX_MNXXXXX_XXXX_XXXXXXXXXX /path/to/samplesheet.csv /hpc/group/ldavidlab/metabarcoding.sif
 ```
 This will take 20min-1hr depending on how many samples were in the sequencing run. You can check on the status of the job with this command:
 ```
@@ -150,13 +148,13 @@ The output will result in a file structure that looks like this:
 Next, run the trnL-pipeline.sh script:
 ```
 # you can once again use 'script-writer.Rmd' to generate this command for you
-sbatch --mail-user=<youremail>@duke.edu trnL-pipeline.sh /path/to/demultiplexed /hpc/group/ldavidlab/qiime2.sif
+sbatch --mail-user=<youremail>@duke.edu /path/to/trnL-pipeline.sh /path/to/demultiplexed /hpc/group/ldavidlab/qiime2.sif
 ```
 This may take several hours
 ## OPTIONAL: Count reads on cluster
 The output files from trnL-pipeline.sh are pretty large and you only need 2 of them to build the phyloseq object. If you prefer, you can run the first QC step while still on the cluster so you don't have to download all the files.
 ```
-sbatch count-reads.sh /path/to/qiime-dir /path/to/qiime2.sif
+sbatch /path/to/count-reads.sh /path/to/qiime-dir /path/to/qiime2.sif
 ```
 This will only take a few seconds to run.
 \n
