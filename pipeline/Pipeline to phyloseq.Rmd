@@ -266,13 +266,42 @@ ggplot(lengths, aes(x = length)) +
 
 ### Taxonomy table
 
+Enter the path to the reference you'll be using:
+```{r}
+# EXAMPLE
+parent='/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/'
+ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider.fasta')
+```
+
+The next step is different depending on whether you are processing 12SV5 or trnL data:
+### For trnL
+
 ```{r}
 # Using modified assignSpecies function from DADA2
 # (only modifies format of returned data, not underlying assignment)
-ref <- file.path('path', 'to','trnL.fasta')
 taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab, 
                                              refFasta = ref, 
                                              tryRC = TRUE)
+
+```
+
+### for 12SV5
+```{r}
+# 12SV5 taxonomy assignment 
+taxtab <-
+      dada2::assignTaxonomy(qiime.asvtab,
+                            taxLevels = c(
+                              'kingdom',
+                              'phylum',
+                              'class',
+                              'order',
+                              'family',
+                              'genus',
+                              'species',
+                              'subspecies'
+                            ),
+                            refFasta = ref,
+                            tryRC = TRUE)
 ```
 
 ```{r}
