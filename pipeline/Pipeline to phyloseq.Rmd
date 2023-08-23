@@ -274,7 +274,7 @@ ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider.fasta')
 ```
 
 The next step is different depending on whether you are processing 12SV5 or trnL data:
-### For trnL
+#### For trnL
 
 ```{r}
 # Using modified assignSpecies function from DADA2
@@ -283,44 +283,6 @@ taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab,
                                              refFasta = ref, 
                                              tryRC = TRUE)
 
-```
-
-### for 12SV5
-```{r}
-# 12SV5 taxonomy assignment 
-taxtab <-
-      dada2::assignTaxonomy(qiime.asvtab,
-                            taxLevels = c(
-                              'kingdom',
-                              'phylum',
-                              'class',
-                              'order',
-                              'family',
-                              'genus',
-                              'species',
-                              'subspecies'
-                            ),
-                            refFasta = ref,
-                            tryRC = TRUE)
-```
-
-```{r}
-# How many ASVs unassigned?
-unassigned <- taxtab.species$asv[is.na(taxtab.species$Species)]
-
-# Percentage of sequence variants
-cat(100*(1 - (length(unassigned)/dim(qiime.asvtab)[2])), '% ASVs have an assigment\n')
-
-# Percentage of reads mapping to these unassigned species
-cat('These ASVs cover', 100*(1-sum(qiime.asvtab[, unassigned])/sum(qiime.asvtab)), '% of sequence reads in the dataset')
-```
-
-Now, look up full taxonomy for these assigned species using taxonomizr functions and SQL database.
-
-For taxonomic assignment, we'll need a path to the SQL database of NCBI's taxonomy produced by R's taxonomizr package.  This is saved on Isilon (~70Gb).  You'll need to map the Isilon network drive to your computer and then point R to the right location. To do this on a Mac, open the application "Finder". At the top of your screen, click "Go". Click "Connect to Server." Now enter 'smb://duhsnas-pri.dhe.duke.edu/dusom_mgm-david/All_Staff' and connect. (You will need to enter your netID, password, and the passcode from Duo for 2-step authentication.) If you are on a Mac, you can then connect to the taxonomy file by using the path below:
-
-```{r}
-sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
 ```
 
 ```{r}
@@ -333,6 +295,24 @@ taxtab.species <- separate(taxtab.species,
 
 head(taxtab.species)
 ```
+Now, look up full taxonomy for these assigned species using taxonomizr functions and SQL database.
+```{r}
+# How many ASVs unassigned?
+unassigned <- taxtab$asv[is.na(taxtab.species$Species)]
+
+# Percentage of sequence variants
+cat(100*(1 - (length(unassigned)/dim(qiime.asvtab)[2])), '% ASVs have an assigment\n')
+
+# Percentage of reads mapping to these unassigned species
+cat('These ASVs cover', 100*(1-sum(qiime.asvtab[, unassigned])/sum(qiime.asvtab)), '% of sequence reads in the dataset')
+```
+For taxonomic assignment, we'll need a path to the SQL database of NCBI's taxonomy produced by R's taxonomizr package.  This is saved on Isilon (~70Gb).  You'll need to map the Isilon network drive to your computer and then point R to the right location.  On a Mac, this is below:
+
+```{r}
+sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
+```
+
+
 
 ```{r}
 # Now look up full taxonomy
@@ -340,6 +320,7 @@ head(taxtab.species)
 taxids <- 
      taxonomizr::accessionToTaxa(taxtab.species$accession,
                                  sql)
+taxids
 ```
 
 ```{r}
@@ -411,6 +392,7 @@ for (i in seq_along(taxonomy.raw)){
 ```{r}
 head(taxonomy)
 ```
+
 ```{r}
 # Group these to their last common ancestor using taxonomizr's condenseTaxa function
 ncol(qiime.asvtab)
@@ -424,6 +406,54 @@ dim(assignments)
 # To what label are assignments made?
 colSums(!is.na(assignments))/nrow(assignments)
 ```
+
+#### for 12SV5
+```{r}
+# 12SV5 taxonomy assignment 
+taxtab <-
+      dada2::assignTaxonomy(qiime.asvtab,
+                            taxLevels = c(
+                              'kingdom',
+                              'phylum',
+                              'class',
+                              'order',
+                              'family',
+                              'genus',
+                              'species',
+                              'subspecies'
+                            ),
+                            refFasta = ref,
+                            tryRC = TRUE)
+head(taxtab)
+taxonomy=data.frame(taxtab)
+```
+
+```{r}
+# How many ASVs unassigned?
+unassigned <- taxonomy$asv[is.na(taxonomy$Species)]
+
+# Percentage of sequence variants
+cat(100*(1 - (length(unassigned)/dim(qiime.asvtab)[2])), '% ASVs have an assigment\n')
+
+# Percentage of reads mapping to these unassigned species
+cat('These ASVs cover', 100*(1-sum(qiime.asvtab[, unassigned])/sum(qiime.asvtab)), '% of sequence reads in the dataset')
+```
+
+
+```{r}
+# Group these to their last common ancestor using taxonomizr's condenseTaxa function
+ncol(qiime.asvtab)
+assignments <- 
+     taxonomizr::condenseTaxa(taxonomy,
+                              groupings = row.names(taxonomy))
+dim(assignments)
+```
+
+```{r}
+# To what label are assignments made?
+colSums(!is.na(assignments))/nrow(assignments)
+```
+
 ### Make object
 
 ```{r}
