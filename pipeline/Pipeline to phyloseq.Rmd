@@ -207,6 +207,8 @@ count.files %>%
           title = '[DATE] MiniSeq run') +
      theme_bw() +
      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+setwd(qiime.dir)
+ggsave('QC_track-reads-plot.png')
 ```
 
 ## Step 2) Make phyloseq object
@@ -261,9 +263,7 @@ lengths <-
      data.frame(asv = colnames(qiime.asvtab),
                 reads = colSums(qiime.asvtab)) |> 
      mutate(length = nchar(asv))
-```
 
-```{r}
 # Histogram of sequence lengths
 ggplot(lengths, aes(x = length)) +
      geom_histogram(binwidth = 5, boundary = 0) +
@@ -274,6 +274,8 @@ ggplot(lengths, aes(x = length)) +
      theme_bw() +
      scale_x_continuous(minor_breaks = seq(0, 250, 10), 
                         breaks = seq(0, 250, 50))
+setwd(qiime.dir)
+ggsave('QC_seq-lengths-histogram.png')
 ```
 
 ### Taxonomy table
@@ -282,7 +284,7 @@ Enter the path to the reference you'll be using:
 ```{r}
 # EXAMPLE
 parent='/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/'
-ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider.fasta')
+ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider_taxonomy.fasta')
 ```
 
 The next step is different depending on whether you are processing 12SV5 or trnL data:
@@ -478,13 +480,16 @@ ps
 ```
 # Step 3) Save
 ```{r}
+setwd(qiime.dir)
 ps %>%
-  saveRDS(file=here('ps.rds'))
+  saveRDS(file='raw-ps.rds')
 ```
+
 ```{r}
-ps =here('ps.rds') %>%
-  readRDS()
+setwd(qiime.dir)
+ps =readRDS('raw-ps.rds')
 ```
+
  # Step 4) Add metadata
 ```{r}
 samdf=here('sample-metadata.csv') %>% read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
