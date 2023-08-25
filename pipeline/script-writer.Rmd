@@ -34,7 +34,7 @@ print(paste0(
 Paste the above command. Ie:
 ```{bash}
 # Example
-sbatch --mail-user=youremail@duke.edu /path/to/demux-barcodes.sh /path/to/miniseq-dir /path/to/samplesheet /hpc/group/ldavidlab/metabarcoding.sif
+# sbatch --mail-user=youremail@duke.edu /path/to/demux-barcodes.sh /path/to/miniseq-dir /path/to/samplesheet /hpc/group/ldavidlab/metabarcoding.sif
 ```
 # Amplicon specific pipeline
 ## Enter demultiplexed reads path
