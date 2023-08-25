@@ -98,6 +98,7 @@ singularity exec --bind $wd $2 qiime metadata tabulate \
      --o-visualization 4_denoised-stats.qzv
 
 # move .err and .out files
+cd ..
 mkdir Reports
 mv $reportdir/12SV5-pipeline.out ./Reports/'12SV5-pipeline_'$SLURM_JOB_ID'.out'
 mv $reportdir/12SV5-pipeline.err ./Reports/'12SV5-pipeline_'$SLURM_JOB_ID'.err'
