@@ -11,3 +11,7 @@ done
 unzip 4_denoised-stats.qzv -d 4_denoised-stats
 cd $wd
 singularity exec --bind $1,$PWD $2 Rscript count-reads.R $1
+
+cd $1/..
+mv $wd/count-reads.out ./Reports
+mv $wd/count-reads.err ./Reports
