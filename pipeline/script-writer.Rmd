@@ -68,14 +68,13 @@ print(paste0(
   'sbatch --mail-user=',email,' ',scripts.dir,'/12SV5-pipeline.sh ', demux.dir, ' ', qiime.container
 ))
 ```
-
 ## Count reads
 ```{r}
 print('trnL')
-print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_trnL_output', ' ', qiime.container
+print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_trnL_output', ' ', scripts.dir, ' ',qiime.container
 ))
 print('12SV5')
-print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_12SV5_output', ' ', qiime.container
+print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_12SV5_output', ' ',scripts.dir, ' ', qiime.container
 ))
 ```
 
