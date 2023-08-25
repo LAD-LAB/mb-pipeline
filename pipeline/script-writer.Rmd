@@ -9,13 +9,13 @@ output: html_notebook
 miniseqDir='/path/to/miniseq-dir'
 samplesheet='/path/to/samplesheet'
 email='youremail@duke.edu'
-scripts.dir='/path/to/where-scripts-are-stored
+scripts.dir='/path/to/where-scripts-are-stored'
 
 ## For example
 # miniseqDir='/hpc/group/ldavidlab/users/tjk30/SAGE-trnL-20230707/230705_MN00462_0054_A000H5JGF5'
 # samplesheet='/hpc/group/ldavidlab/users/tjk30/SAGE-trnL-20230707/samplesheet.csv'
 # email='teresa.kaza@duke.edu'
-# scripts.dir='/hpc/group/ldavidlab/users/tjk30/mb-pipeline/code'
+# scripts.dir='/hpc/group/ldavidlab/users/tjk30/mb-pipeline/pipeline'
 
 ```
 
@@ -28,13 +28,13 @@ demux.container='/hpc/group/ldavidlab/metabarcoding.sif'
 
 print('Copy this command:')
 print(paste0(
-  'sbatch --mail-user=',email,scripts.dir,'/demux-barcode.sh ', miniseqDir, ' ', samplesheet, ' ', demux.container
+  'sbatch --mail-user=',email,' ',scripts.dir,'/demux-barcodes.sh ', miniseqDir, ' ', samplesheet, ' ', demux.container
   ))
 ```
 Paste the above command. Ie:
 ```{bash}
 # Example
-sbatch --mail-user=youremail@duke.edu /path/to/demux-barcode.sh /path/to/miniseq-dir /path/to/samplesheet /hpc/group/ldavidlab/metabarcoding.sif
+sbatch --mail-user=youremail@duke.edu /path/to/demux-barcodes.sh /path/to/miniseq-dir /path/to/samplesheet /hpc/group/ldavidlab/metabarcoding.sif
 ```
 # Amplicon specific pipeline
 ## Enter demultiplexed reads path
@@ -55,7 +55,7 @@ demux.dir='/path/to/demultiplexed'
 ```{r}
 print('Copy this:')
 print(paste0(
-  'sbatch --mail-user=',email,scripts.dir,'/trnL-pipeline.sh ', demux.dir, ' ', qiime.container
+  'sbatch --mail-user=',email,' ',scripts.dir,'/trnL-pipeline.sh ', demux.dir, ' ', qiime.container
 ))
 ```
 
@@ -65,17 +65,17 @@ print(paste0(
 ```{r}
 print('Copy this:')
 print(paste0(
-  'sbatch --mail-user=',email,scripts.dir,'/12SV5-pipeline.sh ', demux.dir, ' ', qiime.container
+  'sbatch --mail-user=',email,' ',scripts.dir,'/12SV5-pipeline.sh ', demux.dir, ' ', qiime.container
 ))
 ```
 
 ## Count reads
 ```{r}
 print('trnL')
-print(paste0('sbatch --mail-user=',email,scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_trnL_results', ' ', qiime.container
+print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_trnL_results', ' ', qiime.container
 ))
 print('12SV5')
-print(paste0('sbatch --mail-user=',email,scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_12SV5_results', ' ', qiime.container
+print(paste0('sbatch --mail-user=',email,' ',scripts.dir,'/count-reads.sh ',dirname(demux.dir),'/',format(Sys.Date(),'%Y%m%d'),'_12SV5_results', ' ', qiime.container
 ))
 ```
 
