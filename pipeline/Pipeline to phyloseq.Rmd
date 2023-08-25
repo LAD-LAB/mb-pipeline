@@ -75,10 +75,22 @@ Go to "Step 0"
 ### OPTION 2: Just download files needed for phyloseq
 ```{bash, eval=FALSE}
 # If you ran count-reads.sh, you just need these files:
-scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-table.qza
-scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-seqs.qza
-scp <netid>@dcc-login.oit.duke.edu:/path/to/track-pipeline.csv
+# scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-table.qza /path/to/qiime-dir
+# scp <netid>@dcc-login.oit.duke.edu:/path/to/4_denoised-seqs.qza /path/to/qiime-dir
+# scp <netid>@dcc-login.oit.duke.edu:/path/to/track-pipeline.csv /path/to/qiime-dir
 ```
+
+This code chunk will write the commands for you if you enter the path to the pipeline results on the DCC (dcc.qiime.dir) and the path to where you would like to store the output files locally (qiime.dir) and your netid
+```{r}
+dcc.qiime.dir='/hpc/group/ldavidlab/users/tjk30/Cambodia-12SV5-20230803/20230825_results/20230825_12SV5_output'
+qiime.dir <- '/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/2023-08-07_12SV5-Cambodia-HOPE'
+netid='tjk30'
+print(paste0('scp ',netid,'@dcc-login.oit.duke.edu:',dcc.qiime.dir,'/4_denoised-table.qza ',qiime.dir))
+print(paste0('scp ',netid,'@dcc-login.oit.duke.edu:',dcc.qiime.dir,'/4_denoised-seqs.qza ',qiime.dir))
+print(paste0('scp ',netid,'@dcc-login.oit.duke.edu:',dcc.qiime.dir,'/track-pipeline.csv ',qiime.dir))
+```
+
+
 You can skip to "Step 1"
 
 ## Step 0) Extract read counts (skip if you already ran count-reads.sh)
