@@ -543,7 +543,7 @@ p=ps.controls %>%
      theme_bw()
 print(p)
 setwd(qiime.dir)
-ggsave(plot=p,filename='controls.png')
+ggsave(plot=p,filename='QC_controls.png')
 ```
 
 
