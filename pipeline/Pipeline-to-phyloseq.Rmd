@@ -492,7 +492,9 @@ ps =readRDS('raw-ps.rds')
 
  # Step 4) Add metadata
 ```{r}
-samdf=here('sample-metadata.csv') %>% read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
+setwd(qiime.dir)
+samdf='sample-metadata.csv' # or whatever you have your metadata file named
+%>% read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
 # samdf=read.csv('/path/to/sample-metadata.csv')
 
 row.names(samdf)=samdf$Sample_ID
@@ -500,12 +502,14 @@ sample_data(ps)=samdf
 ```
 
 ```{r}
+setwd(qiime.dir)
 ps %>%
-  saveRDS(file=here('ps-wMetadata.rds'))
+  saveRDS(file='ps-wMetadata.rds')
 ```
 
 ```{r}
-ps=here('ps-wMetadata.rds') %>%
+setwd(qiime.dir)
+ps='ps-wMetadata.rds' %>%
   readRDS()
 ```
 # Step 5: QC
@@ -538,7 +542,8 @@ p=ps.controls %>%
      title = 'SAGE 14-28mo lib2 12SV5') +
      theme_bw()
 print(p)
-ggsave(plot=p,filename=here('controls.png'))
+setwd(qiime.dir)
+ggsave(plot=p,filename='controls.png')
 ```
 
 
@@ -553,7 +558,7 @@ ps %>%
   subset(species==control.species & Abundance>0 & type!='positive control') %>%
     ggplot(aes(x=Sample,y=Abundance,fill=species)) + geom_bar(stat='identity') + facet_wrap(~type,scales='free') + ggtitle("Wells where positive control species was detected")
 setwd(qiime.dir)
-ggsave("QC_Pos.Control-Detections.png'")
+ggsave("QC_Pos.Control-Detections.png")
 ```
 Are the samples with the positive control detected completely dominated by control reads, or do the species distributions look like real samples?
 ```{r}
