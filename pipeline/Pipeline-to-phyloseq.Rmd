@@ -540,3 +540,212 @@ p=ps.controls %>%
 print(p)
 ggsave(plot=p,filename=here('controls.png'))
 ```
+
+
+Do control species show up in samples?
+```{r}
+control.species='Dromaius novaehollandiae' # put species used in controls here. 
+```
+
+```{r}
+ps %>%
+  psmelt() %>%
+  subset(species==control.species & Abundance>0 & type!='positive control') %>%
+    ggplot(aes(x=Sample,y=Abundance,fill=species)) + geom_bar(stat='identity') + facet_wrap(~type,scales='free') + ggtitle("Wells where positive control species was detected")
+setwd(qiime.dir)
+ggsave("QC_Pos.Control-Detections.png'")
+```
+Are the samples with the positive control detected completely dominated by control reads, or do the species distributions look like real samples?
+```{r}
+yesControl=ps %>%
+  psmelt() %>%
+  group_by(Sample) %>%
+  subset(species==control.species) %>%
+  summarise(yesControl=ifelse(Abundance>0,'Yes','No')) %>%
+  distinct() %>%
+  subset(yesControl=='Yes') %>%
+  .$Sample
+ps %>%
+  psmelt() %>%
+  subset(Sample%in%yesControl & type%in%c('sample','Sample')) %>%
+    ggplot(aes(x=Sample,y=Abundance,fill=species)) + geom_bar(stat='identity') + facet_wrap(~Sample,scales='free',nrow=1) + ggtitle("Samples where positive control species was detected") + theme(legend.position = 'bottom')
+
+setwd(qiime.dir)
+ggsave('QC_Pos.Control-Detections_SamplesOnly.png')
+```
+This assumes that samples are in the same locations as their barcode plate locations (ie, samples with the same barcode plate were located on the same plate)
+```{r}
+# install ggplate
+# devtools::install_github("jpquast/ggplate")
+library(ggplate)
+
+contam.plot=ps %>%
+  psmelt() %>%
+  group_by(Sample) %>%
+  subset(species==control.species) %>%
+  summarise(reads=as.numeric(Abundance),
+            yesControl=ifelse(Abundance>0,'+',''),
+            type=type) %>%
+  distinct() %>%
+  separate(col=Sample,into=c('plate','well'),sep='-',remove=FALSE)
+
+for (Plate in unique(contam.plot$plate)) { # generate a plot for each plate
+p=contam.plot %>%
+    subset(plate==Plate) %>%
+  plate_plot(
+    position = well,
+    label=yesControl,
+    limits=c(1,2), # if this is left empty then there is an error
+  value = type,
+  plate_size = 96,
+  plate_type = "round",
+  colour = c(
+    "#51127CFF",
+    "#B63679FF",
+    "#FB8861FF"
+  ),
+  title=paste('Barcode Plate',Plate)
+) 
+print(p)
+setwd(qiime.dir)
+ggsave(plot=p,filename=paste0('QC_Pos.ControlMap_Plate',Plate,'.png'))
+}
+
+```
+
+# Step 6) decontam and drop controls
+NOTE: make sure you added qubit data to your sample metadata.
+```{r}
+# Remove samples with 0 reads  (need this for subsequent plotting)
+sample_data(ps)$reads <- sample_sums(ps)
+ps.nonzero <- subset_samples(ps, reads > 0)
+ps.nonzero
+samdf=ps@sam_data%>%
+  data.frame()
+```
+
+
+```{r}
+# Flag negative controls
+sample_data(ps.nonzero)$is_neg <- 
+     sample_data(ps.nonzero)$type == 'negative control'
+
+# Troubleshooting: qubit data needs to have a particular format
+
+# for negative qubit data
+# sample_data(ps.nonzero)$qubit[sample_data(ps.nonzero)$qubit<0]<-0.000000000001 # set negative qubit values to pseudocount
+
+# for missing qubit data
+# sample_data(ps.nonzero)$qubit[is.na(sample_data(ps.nonzero)$qubit)]<-0.000000000001 # set NA to pseudocount --careful, this will also add a pseudocount if you forgot to add qubit data
+# Identify contaminants
+contamdf <- isContaminant(ps.nonzero, 
+                          conc = 'qubit', 
+                          neg = 'is_neg',
+                          batch = 'pcr_plate',
+                          method = 'combined')
+
+contamdf
+```
+
+What are the contaminants? 
+
+```{r}
+contam.asvs <- 
+     filter(contamdf, contaminant == TRUE) %>% 
+     row.names()
+
+taxtab <- ps.nonzero@tax_table@.Data
+if (length(contam.asvs)==1) {
+taxtab.contam=data.frame(t(taxtab[contam.asvs, ])) %>%
+mutate(name=ifelse(!is.na(species),species, 
+                     ifelse(!is.na(genus),genus, 
+                            ifelse(!is.na(family),family,
+                                   ifelse(!is.na(order),order,phylum))))) 
+taxtab.contam$name=make.unique(taxtab.contam$name)
+print('The following contaminants were detected:')
+print(taxtab.contam$name)
+  
+} 
+if (length(contam.asvs)>1) { 
+  print(paste(length(contam.asvs),'contaminants detected'))
+taxtab.contam=data.frame(taxtab[contam.asvs, ]) %>%
+mutate(name=ifelse(!is.na(species),species, 
+                     ifelse(!is.na(genus),genus, 
+                            ifelse(!is.na(family),family,
+                                   ifelse(!is.na(order),order,phylum))))) 
+taxtab.contam$name=make.unique(taxtab.contam$name)
+print('The following contaminants were detected:')
+print(taxtab.contam$name)
+} 
+if (length(contam.asvs)==0){
+  print('No contaminating ASVs detected')
+}
+```
+
+Visualize where contaminants are located
+```{r}
+contam.plot=ps %>%
+  psmelt() %>%
+  subset(OTU%in%contam.asvs) %>%
+  mutate(name=species) %>%
+  group_by(Sample,OTU) %>%
+  summarise(reads=as.numeric(Abundance),
+            yesContam=ifelse(Abundance>0,'+',''),
+            type=type,
+            name=name) %>%
+  distinct() %>%
+  separate(col=Sample,into=c('plate','well'),sep='-',remove=FALSE)
+
+contam.plot
+for (contaminant in unique(contam.plot$OTU)) { 
+for (Plate in unique(contam.plot$plate)) { # generate a plot for each plate
+  name=contam.plot$name[contam.plot$OTU==contaminant][1]
+  name
+p=contam.plot %>%
+    subset(plate==Plate & OTU==contaminant) %>%
+  plate_plot(
+    position = well,
+    label=yesContam,
+    limits=c(1,2), # if this is left empty then there is an error
+  value = type,
+  plate_size = 96,
+  plate_type = "round",
+  colour = c(
+    "#51127CFF",
+    "#B63679FF",
+    "#FB8861FF"
+  ),
+  title=paste('Contaminant:', name,'\nBarcode Plate',Plate)
+  
+) 
+print(p)
+setwd(qiime.dir)
+ggsave(plot=p,filename=paste0('QC_Contaminant-',gsub(' ','-',name),'_Plate',Plate,'.png'))
+} 
+}
+```
+
+## Optional: remove contaminants
+Caution: this completely removes the ASVs identified as contaminants from the entire phyloseq object, even if it was truly detected in some samples. Only do this if your downstream analysis would be sensitive to the contamination detected.
+```{r}
+setwd(qiime.dir)
+ps.decontam.nocontrols <- 
+     prune_taxa(!(taxa_names(ps)%in%contam.asvs), ps) %>%
+  subset_samples(., type == 'sample') %>% 
+     prune_taxa(taxa_sums(.) > 0, .)
+ps.decontam.nocontrols %>%
+  saveRDS(file='NoControls-decontam-ps.rds')
+```
+
+# Save without controls
+Otherwise, save 
+```{r}
+
+setwd(qiime.dir)
+# Can now completely drop controls from object
+ps <- 
+     subset_samples(ps, type == 'sample') %>% 
+     prune_taxa(taxa_sums(.) > 0, .)
+ps %>%
+  saveRDS(file='NoControls-ps.rds')
+```
