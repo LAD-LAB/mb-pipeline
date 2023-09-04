@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=12SV5-pipeline
 #SBATCH --mem=20000
-#SBATCH --partition scavenger
+#SBATCH --partition=dmcshared,scavenger
 #SBATCH --out=12SV5-pipeline.out
 #SBATCH --error=12SV5-pipeline.err
 #SBATCH --mail-type=FAIL
