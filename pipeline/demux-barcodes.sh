@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=demux-barcode
 #SBATCH --mem=20000
-#SBATCH --partition scavenger
+#SBATCH --partition=dmcshared,scavenger
 #SBATCH --out=demux-barcode-%j.out
 #SBATCH --error=demux-barcode-%j.err
 #SBATCH --mail-type=FAIL
