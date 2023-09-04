@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=trnL-pipeline
 #SBATCH --mem=20000
-#SBATCH --partition scavenger 
+#SBATCH --partition=dmcshared,scavenger
 #SBATCH --out=trnL-pipeline-%j.out
 #SBATCH --error=trnL-pipeline-%j.err
 #SBATCH --mail-type=FAIL
