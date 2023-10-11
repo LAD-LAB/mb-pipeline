@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=demux-barcode
-#SBATCH --mem=20000
+#SBATCH --mem=50000
 #SBATCH --partition=dmcshared,scavenger
 #SBATCH --out=demux-barcode-%j.out
 #SBATCH --error=demux-barcode-%j.err
