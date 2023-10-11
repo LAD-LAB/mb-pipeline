@@ -19,6 +19,7 @@ output:
 # BiocManager::install("phyloseq")
 # BiocManager::install("dada2")
 # BiocManager::install("ShortRead")
+# BiocManager::install("decontam")
 # devtools::install_github('jbisanz/qiime2R')
 # install.packages('tidyverse')
 # install.packages('taxonomizr')
@@ -31,6 +32,7 @@ library(devtools)
 library(qiime2R)
 library(tidyverse)
 library(taxonomizr)
+library(decontam) # for detecting contaminants
 
 join_table_seqs <- function(feature_table, sequence_hash){
      # feature_table and sequence_hash are the result of reading in QIIME2
@@ -283,8 +285,9 @@ ggsave('QC_seq-lengths-histogram.png')
 Enter the path to the reference you'll be using:
 ```{r}
 # EXAMPLE
-parent='/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/'
-ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider_taxonomy.fasta')
+# parent='/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/'
+# ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider_taxonomy.fasta') # 12SV5
+# ref <- file.path(parent,'0_Methods', 'Reference','trnLGH_2023.fasta') # trnL
 ```
 
 The next step is different depending on whether you are processing 12SV5 or trnL data:
@@ -301,18 +304,18 @@ taxtab.species <- MButils::assignSpecies_mod(qiime.asvtab,
 
 ```{r}
 # Separate accession from species name in our current list of assignments
-taxtab.species <- separate(taxtab.species, 
+taxtab.species.sep <- separate(taxtab.species, 
                            Species,
                            into = c('accession', 'taxon'),
                            sep = ' ',
                            extra = 'merge')
 
-head(taxtab.species)
+head(taxtab.species.sep)
 ```
 Now, look up full taxonomy for these assigned species using taxonomizr functions and SQL database.
 ```{r}
 # How many ASVs unassigned?
-unassigned <- taxtab$asv[is.na(taxtab.species$Species)]
+unassigned <- taxtab.species.sep$asv[is.na(taxtab.species$Species)]
 
 # Percentage of sequence variants
 cat(100*(1 - (length(unassigned)/dim(qiime.asvtab)[2])), '% ASVs have an assigment\n')
@@ -490,7 +493,11 @@ setwd(qiime.dir)
 ps =readRDS('raw-ps.rds')
 ```
 
- # Step 4) Add metadata
+# Step 4) Add metadata
+At minimum, your sample data file will need the following columns:
+-Sample_ID: this should match the sample ids in the samplesheet.csv file
+-type: 'sample', 'positive control', 'negative control', 'blank', etc
+-pcr_batch
 ```{r}
 setwd(qiime.dir)
 samdf='sample-metadata.csv' # or whatever you have your metadata file named
@@ -513,13 +520,11 @@ ps='ps-wMetadata.rds' %>%
   readRDS()
 ```
 # Step 5: QC
-You will need a column labeled "type" with whether or not the sample is a "positive control", "negative control", "blank", or "sample". You will need those exact labels for this next code chunk to work:
+You will need a column labeled "type" with whether or not the sample is a "positive control", "negative control", "blank", or "sample". Samples will need to be labeled exactly as "sample" for this next code to work:
 ```{r}
 ps.controls <-
      ps %>% 
-     subset_samples(type %in% c('blank',
-                                'positive control', 
-                                'negative control')) %>% 
+     subset_samples(!type%in%c('sample')) %>% 
      prune_taxa(taxa_sums(.) > 0, .)
 ps.controls
 
@@ -549,7 +554,9 @@ ggsave(plot=p,filename='QC_controls.png')
 
 Do control species show up in samples?
 ```{r}
-control.species='Dromaius novaehollandiae' # put species used in controls here. 
+# put species used in controls here. 
+control.species='Dromaius novaehollandiae' # emu
+control.species='Ilex paraguariensis' # holly
 ```
 
 ```{r}
