@@ -335,7 +335,7 @@ sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
 # Now look up full taxonomy
 # First link accession to taxon ID
 taxids <- 
-     taxonomizr::accessionToTaxa(taxtab.species$accession,
+     taxonomizr::accessionToTaxa(taxtab.species.sep$accession,
                                  sql)
 taxids
 ```
