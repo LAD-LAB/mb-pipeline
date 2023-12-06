@@ -500,8 +500,8 @@ At minimum, your sample data file will need the following columns:
 -pcr_batch
 ```{r}
 setwd(qiime.dir)
-samdf='sample-metadata.csv' # or whatever you have your metadata file named
-%>% read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
+samdf='sample-metadata.csv' %>%  # or whatever you have your metadata file named
+read.csv() # a .csv file where "Sample_ID" is the same as in the samplesheet.csv file. You may need to change the path:
 # samdf=read.csv('/path/to/sample-metadata.csv')
 
 row.names(samdf)=samdf$Sample_ID
