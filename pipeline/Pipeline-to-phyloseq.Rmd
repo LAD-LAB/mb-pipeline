@@ -287,6 +287,7 @@ Enter the path to the reference you'll be using:
 # EXAMPLE
 # parent='/Users/tjk30/Library/CloudStorage/Box-Box/project_davidlab/LAD_LAB_Personnel/Teresa_M/1_Infant-Metabarcoding/'
 # ref <- file.path(parent,'0_Methods', 'Reference','12SV5_Schneider_taxonomy.fasta') # 12SV5
+# ref <- file.path(parent,'0_Methods', 'Reference','dna-sequences-rc-tax.fasta') # 12SV5 database made by paul
 # ref <- file.path(parent,'0_Methods', 'Reference','trnLGH_2023.fasta') # trnL
 ```
 
