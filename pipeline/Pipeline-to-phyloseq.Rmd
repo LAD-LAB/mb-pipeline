@@ -338,6 +338,28 @@ sql <- '/Volumes/All_Staff/localreference/ncbi_taxonomy/accessionTaxa.sql'
 taxids <- 
      taxonomizr::accessionToTaxa(taxtab.species.sep$accession,
                                  sql)
+
+# Which accessions are missing in the sql database? Manually add them below
+print(taxtab.species.sep[which(is.na(taxids)),2:3])
+```
+
+To manually add a taxid for a missing accession, you need the accession and taxid; take the accession from above and look up the taxid with NCBI's Nucleotide database.
+
+```{r}
+# if (any(taxtab.species.sep$accession == "accession")) {
+  # taxids[which(taxtab.species.sep$accession == "accession")] <- taxid
+# }
+
+# Manually adding in Sideroxylon spinosum (taxid 2945705, accession DQ924307.1)
+if (any(taxtab.species.sep$accession == "DQ924307.1")) {
+  taxids[which(taxtab.species.sep$accession == "DQ924307.1")] <- 2945705
+}
+
+# Manually adding in Solanum lycopersicum (taxid 4081, accession AC_000188.1)
+if (any(taxtab.species.sep$accession == "AC_000188.1")) {
+  taxids[which(taxtab.species.sep$accession == "AC_000188.1")] <- 4081
+}
+
 taxids
 ```
 
