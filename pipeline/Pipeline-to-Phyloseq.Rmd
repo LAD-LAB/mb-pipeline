@@ -1,0 +1,349 @@
+---
+title: "Pipeline-to-Phyloseq"
+author: "David Lab, Duke University"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Pipeline-to-Phyloseq
+
+This file creates trnL and 12Sv5 phyloseq objects from raw multiplex sequencing data. It handles both markers simultaneously; if your run only contains one marker, it will process whichever is present and skip the other.
+
+For step-by-step documentation, troubleshooting tips, and prerequisite terminal steps, see the [FoodSeq Handbook](https://lad-lab.github.io/pipeline.html).
+
+# Setup
+## Installing and Loading Packages
+
+Install `foodseq.tools` from GitHub if you haven't already. This package provides the helper functions used throughout this file (`process_qiime_run()`, `assignment_trnL()`, `assignment_12S()`, `qc_controls()`, `plot_asv_length_hist()`, etc.):
+
+```{r Installing foodseq.tools, eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("Ashish-Subramanian/foodseq.tools")
+```
+
+```{r Loading Packages, message=FALSE, results='hide'}
+# Make sure all these packages are installed!
+library(dada2)
+library(foodseq.tools)
+library(qiime2R)
+library(phyloseq)
+library(showtext)
+library(sysfonts)
+library(tidyverse)
+```
+
+```{r Adding Fonts, echo=FALSE}
+# Font for plots (change if you'd like, replace with any Google Font, or delete for defaults)
+# "Source Sans Pro" was renamed to "Source Sans 3" on Google Fonts in 2023;
+# try the new name first, fall back to the old name for older sysfonts versions
+plot_font <- tryCatch({
+  font_add_google("Source Sans 3", "Source Sans 3")
+  "Source Sans 3"
+}, error = function(e) {
+  tryCatch({
+    font_add_google("Source Sans Pro", "Source Sans Pro")
+    "Source Sans Pro"
+  }, error = function(e2) {
+    message("Could not load Source Sans from Google Fonts; using default font.")
+    ""
+  })
+})
+showtext_auto(TRUE)
+showtext_opts(dpi = 300) # Match ggsave DPI so text renders at the correct size in saved PNGs
+if (nzchar(plot_font)) theme_set(theme_bw(base_family = plot_font)) else theme_set(theme_bw())
+```
+
+By default, the following code assumes and will create a file structure resembling the following:
+
+```{}
+└── /path/to/project/folder
+    └── Project1
+        ├── sample-metadata.csv
+        ├── 12SV5
+        │   ├── pipeline output
+        │   ├── phyloseq objects
+        │   ├── quality control plots and graphs
+        │   └── tables, etc.
+        └── trnL
+            ├── pipeline output
+            ├── phyloseq objects
+            ├── quality control plots and graphs
+            └── tables, etc.
+```
+
+Set the necessary file paths and variables below. The default file structure assumes that `project` is the name of your project as well as of the folder where all output from this file gets saved (so your project could be "ABC" and your folder would then be `/path/to/projects/ABC`, containing a `sample-metadata.csv` file and the `trnL` and `12SV5` folders).
+
+`sample-metadata.csv` is assumed to be a CSV in your project folder. It should have a column `Sample_ID` with entries that match to the existing sample names from `samplesheet.csv` (in the form `1-A01`; rename, if necessary, after quality control at the end); a column `type` whose values are exactly 'sample,' 'positive control,' 'negative control,' or 'blank;' and a column `pcr_plate` whose value is the plate number from the sequencing run. If you save your metadata with the file name `sample-metadata.csv`, no changes are needed to `metadata <- "sample-metadata.csv"`.
+
+If you keep a personal template of this file, only `hpc_results_path`, `project_path`, `ref_trnL`, and `ref_12S` should need changing from run to run. If your `sample-metadata.csv` is saved under a different name, remember to change it below.
+
+```{r Setting User Inputs}
+username <- "[username]"                    # Your HPC username (e.g., Duke NetID)
+hpc_host <- "[hpc-hostname]"               # Your HPC login node (e.g., "dcc-login.oit.duke.edu")
+hpc_results_path <- "[/hpc/path/to/project/YYYYMMDD_results]" # HPC path ending in /YYYYMMDD_results
+project_path <- "[/path/to/local/project/folder]"             # Local folder where your trnL and 12S folders will be saved
+metadata <- "sample-metadata.csv"
+download_mode <- "minimal" # Change to "full" if you want to download all files from the HPC; keep as "minimal" to only download necessary files if you have already run count-reads.sh
+
+# Reference FASTAs for taxonomy assignment
+# These can be downloaded from the LAD-LAB GitHub: https://github.com/LAD-LAB/mb-pipeline/tree/main/reference/references
+# Place them locally and set the paths here:
+ref_trnL <- "[/path/to/trnLGH_taxonomy.fasta]"
+ref_12S <- "[/path/to/12Sv5_taxonomy.fasta]"
+```
+
+From this point onward, you shouldn't need to rename anything or change any paths. If you do want to change any variable names, like `ps.trnL` or `qiime.dir.12S`, breaking my naming conventions will trigger errors when running the auxiliary functions or constructing file paths, so be careful and update those functions as needed as well.
+
+Here is a checklist to make sure you are ready to run the code through:
+
+- Have you replaced all bracketed placeholders (`[username]`, `[hpc-hostname]`, etc.) in the user inputs chunk above?
+  - (optional) If your metadata is located outside of your `project_path` folder, have you changed `metadata_path` below?
+- Is your output folder empty of potentially conflicting files, such as those that may result from an unsuccessful previous run-through?
+- (optional) Do you have a metadata file? If so, does it have `Sample_ID`, `type`, and `pcr_plate` columns? Are the values for `type` exactly 'sample,' 'positive control,' 'negative control,' and 'blank'?
+
+If your metadata is stored outside your `project_path` folder and/or your `project_path` folder is not named for your project, manually update `metadata_path` to where your metadata for this run is located and/or `project` to the name of your project in the following chunk:
+
+```{r Building Paths}
+project <- basename(project_path) # If your project is named different than the folder in which the trnL and 12S folders will be saved, update it here; this will be used for titling plots
+metadata_path <- file.path(project_path, metadata) # If your metadata is stored in a different location than `/path/to/projects/Project/sample-metadata.csv`, update the file path here manually
+```
+
+## Download Data to R
+
+Copy the files over from the HPC into your local project folder. The following code first downloads the files to your home directory and then moves them to the project folder to get around an issue with Box's conflict-avoidant renaming practices (if you are not using Box, this is harmless):
+
+```{r Setting Environmental Variables}
+Sys.setenv(
+  USERNAME = username,
+  HPC_HOST = hpc_host,
+  HPC_PATH = hpc_results_path,
+  PROJECT_PATH = project_path,
+  DL_MODE  = download_mode
+)
+```
+
+```{bash Downloading Data to R}
+set -euo pipefail
+
+tmp="$HOME/tmp_hpc_stage"
+rm -rf "$tmp"/202*_output || true
+mkdir -p "$tmp" "$PROJECT_PATH"
+
+if [ "${DL_MODE:-minimal}" = "full" ]; then
+  # Copy FULL run folders (preserve directory structure)
+  rsync -a \
+    "$USERNAME@$HPC_HOST:$HPC_PATH"/202*_output \
+    "$tmp"/ > /dev/null
+else
+  # Copy ONLY the needed files, *preserving* the run directory
+  # We root the filter at HPC_PATH/ by syncing that directory and using include rules.
+  rsync -a --prune-empty-dirs \
+    --include='*/' \
+    --include='202*_output/4_denoised-table.qza' \
+    --include='202*_output/4_denoised-seqs.qza' \
+    --include='202*_output/*track-pipeline*.csv' \
+    --exclude='*' \
+    "$USERNAME@$HPC_HOST:$HPC_PATH"/ \
+    "$tmp"/ > /dev/null
+fi
+
+# Move into project folder and split by marker (trnL vs 12S) without collisions
+for run in "$tmp"/202*_output; do
+  [ -d "$run" ] || continue
+  base=$(basename "$run")
+
+  if echo "$base" | grep -q '_trnL_output$'; then
+    dest="$PROJECT_PATH/trnL"
+  elif echo "$base" | grep -q '_12SV5_output$'; then
+    dest="$PROJECT_PATH/12S"
+  else
+    echo "Skipping unknown run folder: $base"
+    continue
+  fi
+  mkdir -p "$dest"
+
+  # REQUIRED files safeguard
+  req1="$run/4_denoised-table.qza"
+  req2="$run/4_denoised-seqs.qza"
+  if [ ! -f "$req1" ] || [ ! -f "$req2" ]; then
+    echo "ERROR: Missing required QZA(s) in $base; not moving this run." >&2
+    continue
+  fi
+
+  # Now copy that whole run dir's contents into the correct marker folder
+  rsync -a "$run"/ "$dest"/ > /dev/null
+done
+
+rm -rf "$tmp"
+```
+
+## Extract Read Counts
+
+Set your output directories:
+
+```{r Setting QIIME Directories, message=FALSE, results='hide'}
+qiime.dir.trnL <- file.path(project_path, "trnL")
+qiime.dir.12S  <- file.path(project_path, "12S")
+```
+
+The `process_qiime_run()` function should count the number of reads for each sample at each processing step for quality control. If this fails, delete the newly-created files in `qiime.dir.trnL` and `qiime.dir.12S` before re-running.
+
+```{r Counting Reads, message=FALSE}
+if(dir.exists(qiime.dir.trnL)) {
+  read_counts_trnL <- process_qiime_run("trnL")
+  print(read_counts_trnL$plot + theme_get())
+}
+
+if(dir.exists(qiime.dir.12S)) {
+  read_counts_12S <- process_qiime_run("12S")
+  print(read_counts_12S$plot + theme_get())
+}
+```
+
+## Data Preparation
+
+Here, we create ASV tables from `4_denoised-table.qza` and `4_denoised-seqs.qza`. These tables will become the `otu_table`s of our final phyloseqs:
+
+```{r Creating ASV Tables, message=FALSE}
+if(dir.exists(qiime.dir.trnL)) {
+  qiime.asvtab.trnL <- dada2::collapseNoMismatch(join_table_seqs(read_qza(file.path(qiime.dir.trnL, '4_denoised-table.qza')), read_qza(file.path(qiime.dir.trnL, '4_denoised-seqs.qza'))))
+}
+
+if(dir.exists(qiime.dir.12S)) {
+  qiime.asvtab.12S <- dada2::collapseNoMismatch(join_table_seqs(read_qza(file.path(qiime.dir.12S, '4_denoised-table.qza')), read_qza(file.path(qiime.dir.12S, '4_denoised-seqs.qza'))))
+}
+```
+
+## ASV Lengths
+
+For quality control, plot a histogram of read lengths with the `plot_asv_length_hist()` function:
+
+```{r Plotting Length Histograms}
+if(dir.exists(qiime.dir.trnL)) {
+  length_histograms_trnL <- plot_asv_length_hist("trnL")
+  print(length_histograms_trnL$plot + theme_get())
+}
+
+if(dir.exists(qiime.dir.12S)) {
+  length_histograms_12S <- plot_asv_length_hist("12S")
+  print(length_histograms_12S$plot + theme_get())
+}
+```
+
+# Phyloseq Creation
+## Create the Taxonomy Table
+
+The `assignment_trnL()` and `assignment_12S()` functions handle the entire taxonomy table creation process, including sequence matching against the reference and condensing ASVs to their last common ancestor:
+
+```{r Creating Taxonomy Tables, warning=FALSE}
+if(dir.exists(qiime.dir.trnL)) {
+  assignments.trnL <- assignment_trnL(ref_fasta = ref_trnL)$assignments
+}
+
+if(dir.exists(qiime.dir.12S)) {
+  assignments.12S <- assignment_12S(ref_fasta = ref_12S)$assignments
+}
+```
+
+## Create the Raw Phyloseq
+
+These code chunks create trnL and 12S phyloseqs with `otu_table`s and `tax_table`s but not `sam_data` tables; this will come at a later step, contingent on a sample metadata .csv file existing in your project folder:
+
+```{r Creating Raw Phyloseqs}
+if(dir.exists(qiime.dir.trnL)) {
+  ps.trnL <-
+    phyloseq(otu_table = otu_table(qiime.asvtab.trnL,
+                                   taxa_are_rows = FALSE),
+             tax_table = tax_table(assignments.trnL))
+
+  saveRDS(ps.trnL, file.path(qiime.dir.trnL, "raw-ps-trnL.rds"))
+}
+
+if(dir.exists(qiime.dir.12S)) {
+  ps.12S <-
+    phyloseq(otu_table = otu_table(qiime.asvtab.12S,
+                                   taxa_are_rows = FALSE),
+             tax_table = tax_table(assignments.12S))
+
+  saveRDS(ps.12S, file.path(qiime.dir.12S, "raw-ps-12S.rds"))
+}
+```
+
+## Add Metadata
+
+Here, metadata will be added to the phyloseqs as a `sam_data` table if a sample metadata .csv exists in your project folder:
+
+```{r Adding Metadata, eval = file.exists(metadata_path)}
+if (file.exists(metadata_path)) {
+  samdf <- read.csv(metadata_path)
+
+  # Check that the necessary columns exist:
+  required_cols <- c("Sample_ID", "type", "pcr_plate")
+  if (!all(required_cols %in% names(samdf))) {
+    stop("Missing columns: ", paste(setdiff(required_cols, names(samdf)), collapse = ", "))
+  }
+
+  # Check that the values for 'type' are correct:
+  incorrect_types <- setdiff(unique(samdf$type), c("positive control", "negative control", "blank", "sample"))
+  if (length(incorrect_types) > 0) {
+    stop("Column 'type' has disallowed values: ", paste(incorrect_types, collapse = ", "))
+  }
+
+  incorrect_samples <- samdf$Sample_ID[!grepl("^[0-9]-[A-H][0-9]{2}$", samdf$Sample_ID)]
+  if (length(incorrect_samples) > 0) {
+    stop("Column 'Sample_ID' has disallowed values: ", paste(incorrect_samples, collapse = ","))
+  }
+
+  row.names(samdf) <- samdf$Sample_ID
+
+  if(dir.exists(qiime.dir.trnL)) {
+    sample_data(ps.trnL) <- samdf
+    saveRDS(ps.trnL, file.path(qiime.dir.trnL, "ps-wMetadata-trnL.rds"))
+  }
+
+  if(dir.exists(qiime.dir.12S)) {
+    sample_data(ps.12S) <- samdf
+    saveRDS(ps.12S, file.path(qiime.dir.12S, "ps-wMetadata-12S.rds"))
+  }
+}
+```
+
+# Quality Control
+## Controls
+
+```{r Setting Controls}
+# Update these to match your positive control species:
+control.trnL <- c("Ilex paraguariensis", "Trifolium pratense", "synthetic trnL ASV")
+control.12S <- c("Dromaius novaehollandiae", "Correlophus ciliatus", "Rhacodactylus leachianus", "synthetic 12S ASV")
+```
+
+The following code will perform some of our standard quality control checks with the `qc_controls()` function, finding 1) the species present in controls, 2) actual samples in which positive controls were detected, and 3) the well locations of controls and samples with positive controls detected:
+
+```{r trnL Quality Control, eval = file.exists(metadata_path)}
+if(!is.null(sample_data(ps.trnL, errorIfNULL = FALSE))) {
+  qc.trnL <- qc_controls("trnL")
+  if (!is.null(qc.trnL$p.controls)) print(qc.trnL$p.controls + theme_get())
+  if (!is.null(qc.trnL$p.samples))  print(qc.trnL$p.samples + theme_get())
+  if (length(qc.trnL$p.plates) > 0) {
+    invisible(lapply(qc.trnL$p.plates, function(p) {
+      print(p + theme_get() + theme(panel.grid = element_blank()))
+    }))
+  }
+}
+```
+
+```{r 12S Quality Control, eval = file.exists(metadata_path)}
+if(!is.null(sample_data(ps.12S, errorIfNULL = FALSE))) {
+  qc.12S <- qc_controls("12S")
+  if (!is.null(qc.12S$p.controls)) print(qc.12S$p.controls + theme_get())
+  if (!is.null(qc.12S$p.samples))  print(qc.12S$p.samples + theme_get())
+  if (length(qc.12S$p.plates) > 0) {
+    invisible(lapply(qc.12S$p.plates, function(p) {
+      print(p + theme_get() + theme(panel.grid = element_blank()))
+    }))
+  }
+}
+```
+
+Congratulations: if everything looks good, you have successfully created trnL and 12S phyloseqs!
