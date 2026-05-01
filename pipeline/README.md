@@ -75,11 +75,11 @@ If you plan to download in minimal mode (only the files needed for phyloseq crea
 ```sh
 sbatch [/path/to/count-reads.sh] \
   [/path/to/XXXXXXXX_results/XXXXXXXX_output] \
-  [/path/to/count-reads.R] \
+  [/path/to/mb-pipeline/pipeline] \
   [/path/to/metabarcoding.sif]
 ```
 
-The script takes three arguments: the path to the pipeline output directory (e.g., `20250115_trnL_output`), the path to `count-reads.R`, and the path to the Singularity container. It runs in seconds.
+The script takes three arguments: the path to the pipeline output directory (e.g., `20250115_trnL_output`), the path to the directory containing `count-reads.R` (wherever you cloned the mb-pipeline repository), and the path to the Singularity container. It runs in seconds.
 
 If you download in full mode instead, this step is not needed — `Pipeline-to-Phyloseq.Rmd` can process the QC data locally.
 
