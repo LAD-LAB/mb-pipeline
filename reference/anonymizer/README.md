@@ -154,7 +154,7 @@ To use this tool with a different amplicon target:
 
 If you use this software, please cite:
 
-> [Author(s)]. Human Read Anonymizer for Metabarcoding FASTQ Files. [Year]. GitHub: [repository URL].
+> Subramanian AM. Human Read Anonymizer for Metabarcoding FASTQ Files. 2026. GitHub: [repository URL].
 
 ## References
 
