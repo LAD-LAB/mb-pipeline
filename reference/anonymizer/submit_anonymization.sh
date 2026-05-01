@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Master Script for Human Read Anonymization on Duke Computing Cluster
+# Master Script for Human Read Anonymization
 # This script prepares the job array and submits to SLURM
 
 set -e  # Exit on error
@@ -9,19 +9,18 @@ set -e  # Exit on error
 # CONFIGURATION - EDIT THESE VARIABLES
 # ============================================================================
 
-# Path to your R singularity container on DCC
-# Example: /path/to/r-base_4.3.1.sif
-SINGULARITY_IMAGE="/hpc/group/ldavidlab/metabarcoding.sif"
+# Path to your Singularity container with R and Bioconductor (or "" for system R)
+SINGULARITY_IMAGE="/path/to/container.sif"
 
 # Path to human reference FASTA file
 # This should contain known human sequences for k-mer matching
-REF_FASTA="/hpc/group/ldavidlab/users/ams292/Projects/Anonymizer/human-sequences.fasta"
+REF_FASTA="/path/to/human-sequences.fasta"
 
 # Input directory containing FASTQ.gz files
-INPUT_DIR="/hpc/group/ldavidlab/users/ams292/Projects/Anonymizer/Input"
+INPUT_DIR="/path/to/input/fastq/files"
 
 # Output directory for anonymized files
-OUTPUT_DIR="/hpc/group/ldavidlab/users/ams292/Projects/Anonymizer/Output"
+OUTPUT_DIR="/path/to/output/directory"
 
 # K-mer matching parameters
 THRESHOLD=0.7      # K-mer overlap threshold (0-1) for calling human

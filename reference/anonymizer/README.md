@@ -103,11 +103,10 @@ chmod +x submit_anonymization.sh slurm_anonymize_job.sh human_read_anonymizer.R
 ./submit_anonymization.sh
 ```
 
-3. Monitor and check results:
+3. Monitor jobs:
 
 ```bash
-squeue -u $USER                    # Monitor running jobs
-./check_results.sh <JOB_ID>        # Summarize results after completion
+squeue -u $USER
 ```
 
 ## Parameters

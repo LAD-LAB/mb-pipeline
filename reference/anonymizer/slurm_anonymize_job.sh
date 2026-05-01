@@ -7,11 +7,11 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --array=1-PLACEHOLDER_NFILES
 
-# SLURM Job Script for Human Read Anonymization on DCC
+# SLURM Job Script for Human Read Anonymization
 # This script processes one FASTQ file per array task
 
 # Load required modules or singularity container
-# ADJUST THIS PATH to your R singularity container on DCC
+# Set by submit_anonymization.sh — do not edit manually
 SINGULARITY_IMAGE="PLACEHOLDER_SINGULARITY_PATH"
 
 # Input parameters (passed via environment or config file)
@@ -44,9 +44,8 @@ echo "=========================================="
 # Run the anonymization script
 if [ -n "$SINGULARITY_IMAGE" ] && [ -f "$SINGULARITY_IMAGE" ]; then
     echo "Running with Singularity container: $SINGULARITY_IMAGE"
+    # Adjust bind mounts (-B) to match your cluster's filesystem layout
     singularity exec \
-        -B /hpc:/hpc \
-        -B /work:/work \
         "$SINGULARITY_IMAGE" Rscript human_read_anonymizer.R \
         "$REF_FASTA" \
         "$INPUT_FILE" \
