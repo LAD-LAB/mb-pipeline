@@ -9,6 +9,10 @@
 
 # Usage: demux-barcode.sh /miniseq-dir /path/to/samplesheetname /path/to/metabarcoding.sif
 # Example: sbatch demux-barcode.sh path/to/miniseq-dir /path/to/samplesheet.csv /hpc/group/ldavidlab/metabarcoding.sif
+#
+# The --partition above is for Duke's DCC. External users should override it
+# on the command line, e.g.:
+#   sbatch --partition=your-partition demux-barcodes.sh ...
 
 
 codedir=$PWD

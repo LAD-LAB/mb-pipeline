@@ -2,7 +2,11 @@
 #SBATCH -o count-reads.out
 #SBATCH -e count-reads.err
 #SBATCH -p scavenger
-# usage: sbatch count-reads.sh /path/to/qiime /path/to/where-scripts-are-stored /path/to/metabarcoding.sif 
+# usage: sbatch count-reads.sh /path/to/qiime /path/to/where-scripts-are-stored /path/to/metabarcoding.sif
+#
+# The -p above is for Duke's DCC. External users should override it
+# on the command line, e.g.:
+#   sbatch --partition=your-partition count-reads.sh ...
 wd=$PWD
 cd $1
 for f in [123]*.qzv; do

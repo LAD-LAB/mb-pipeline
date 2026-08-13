@@ -2,17 +2,27 @@
 #SBATCH --job-name=12SV5-pipeline
 #SBATCH --mem=20000
 #SBATCH --partition=dmcshared,scavenger
-#SBATCH --out=12SV5-pipeline.out
-#SBATCH --error=12SV5-pipeline.err
+#SBATCH --out=12SV5-pipeline-%j.out
+#SBATCH --error=12SV5-pipeline-%j.err
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 
 # Usage:
-# sbatch --mail-user=netID@duke.edu 12SV5-pipeline.sh /path/to/demux-dir /path/to/qiime2.sif
+# sbatch --mail-user=netID@duke.edu 12SV5-pipeline.sh /path/to/demux-dir /path/to/qiime2.sif [input-format]
+#
+# The --partition above is for Duke's DCC. External users should override it
+# on the command line, e.g.:
+#   sbatch --partition=your-partition --mail-user=you@example.edu 12SV5-pipeline.sh ...
+#
+# The optional third argument sets the QIIME2 import format (default:
+# CasavaOneEightSingleLanePerSampleDirFmt). If your FASTQs do not follow the
+# Casava naming convention, use a manifest-based import instead — see
+# https://docs.qiime2.org/2024.5/tutorials/importing/ for details.
 
 ## Set up input, output directories ############################################
 reportdir=$PWD
 INPUT_DIR=$1
+INPUT_FORMAT=${3:-CasavaOneEightSingleLanePerSampleDirFmt}
 cd $INPUT_DIR/..
 wd=$PWD
 now=$(date +'%Y%m%d')
@@ -26,7 +36,7 @@ cd $OUTPUT_DIR
 singularity exec --bind $wd $2 qiime tools import \
      --type 'SampleData[PairedEndSequencesWithQuality]' \
      --input-path $INPUT_DIR \
-     --input-format CasavaOneEightSingleLanePerSampleDirFmt \
+     --input-format $INPUT_FORMAT \
      --output-path 1_demultiplexed.qza
 
 singularity exec --bind $wd $2 qiime demux summarize \
