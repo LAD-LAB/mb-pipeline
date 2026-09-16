@@ -36,7 +36,7 @@ Older versions of pipeline files are in the [`archive/`](archive/) folder for re
 - Access to an HPC cluster with SLURM and Singularity
 - The Singularity containers `metabarcoding.sif` (for `bcl2fastq`) and `qiime2.sif` (for QIIME2) available on the cluster
 - [R](https://www.r-project.org/) with the [`foodseq.tools`](https://github.com/Ashish-Subramanian/foodseq.tools) package installed
-- Reference FASTAs for taxonomy assignment, available in [`reference/references/`](../reference/references/)
+- Reference FASTAs for taxonomy assignment, available in [`food-dbs`](https://github.com/LAD-LAB/food-dbs/tree/master/data/outputs/dada2-compatible)
 
 ### 1. Demultiplex
 
