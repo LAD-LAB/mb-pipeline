@@ -7,9 +7,12 @@ Code for analyzing metabarcoding (FoodSeq) datasets in the [David Lab](https://s
 ```
 mb-pipeline/
 ├── pipeline/          # Cluster scripts and R notebook for creating phyloseq objects
-├── reference/         # Reference databases and samplesheet templates
+├── anonymizer/        # Human read anonymizer for SRA submission
+├── templates/         # Samplesheet and sample metadata templates
 └── foodseq-protocols/ # Wet lab protocols
 ```
+
+Reference databases and common names CSVs are maintained in [`food-dbs`](https://github.com/LAD-LAB/food-dbs).
 
 ## Getting Started
 
