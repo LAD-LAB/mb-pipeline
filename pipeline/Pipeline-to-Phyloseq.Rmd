@@ -87,7 +87,7 @@ metadata <- "sample-metadata.csv"
 download_mode <- "minimal" # Change to "full" if you want to download all files from the HPC; keep as "minimal" to only download necessary files if you have already run count-reads.sh
 
 # Reference FASTAs for taxonomy assignment
-# These can be downloaded from the LAD-LAB GitHub: https://github.com/LAD-LAB/mb-pipeline/tree/main/reference/references
+# These can be downloaded from the LAD-LAB GitHub: https://github.com/LAD-LAB/food-dbs/tree/master/data/outputs/dada2-compatible
 # Place them locally and set the paths here:
 ref_trnL <- "[/path/to/trnLGH_taxonomy.fasta]"
 ref_12S <- "[/path/to/12Sv5_taxonomy.fasta]"
