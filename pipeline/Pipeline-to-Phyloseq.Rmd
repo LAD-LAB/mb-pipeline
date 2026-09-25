@@ -19,7 +19,7 @@ Install `foodseq.tools` from GitHub if you haven't already. This package provide
 
 ```{r Installing foodseq.tools, eval=FALSE}
 # install.packages("devtools")
-devtools::install_github("Ashish-Subramanian/foodseq.tools")
+devtools::install_github("LAD-LAB/foodseq.tools")
 ```
 
 ```{r Loading Packages, message=FALSE, results='hide'}
